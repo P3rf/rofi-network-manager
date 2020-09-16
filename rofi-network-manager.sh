@@ -88,11 +88,13 @@ function disconnect() {
 	notification $1 $2 $3 "You're now disconnected from Wi-Fi network '$TRUE_ACTIVE_SSID'" 
 	nmcli con down id  "$TRUE_ACTIVE_SSID"
 }
-function connect() {
-	
+function check_wifi_connected(){
 	if [[ "$(nmcli device status | grep ${WIRELESS_INTERFACES[WLAN_INT]} | awk '{print $3}')" == "connected" ]]; then
 		disconnect "5" "low" "Connection_Terminated"
 	fi
+}
+function connect() {
+	check_wifi_connected
 	notification "5" "critical" "Wi-Fi" "Connecting to $1"
 	if [ $(nmcli dev wifi con "$1" password "$2" ifname ${WIRELESS_INTERFACES[WLAN_INT]}| grep -c "successfully activated" ) = "1" ]; then
 		notification "5" "normal" "Connection_Established" "You're now connected to Wi-Fi network '$1' "
@@ -101,9 +103,7 @@ function connect() {
 	fi
 }
 function stored_connection() {
-	if [[ "$(nmcli device status | grep ${WIRELESS_INTERFACES[WLAN_INT]} | awk '{print $3}')" == "connected" ]]; then
-		disconnect "5" "low" "Connection_Terminated"
-	fi
+	check_wifi_connected
 	notification "5" "critical" "Wi-Fi" "Connecting to $1"
 	if [ $(nmcli dev wifi con "$1" ifname ${WIRELESS_INTERFACES[WLAN_INT]}| grep -c "successfully activated" ) = "1" ]; then
 		notification "5" "normal" "Connection_Established" "You're now connected to Wi-Fi network '$1' "
@@ -112,6 +112,7 @@ function stored_connection() {
 	fi
 }
 function ssid_manual() {
+	check_wifi_connected
 	SSID=$(echo "Enter SSID" | rofi -dmenu  -p ">_" -a "0" -lines 1 -location "$POSITION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -width 18 -font "$FONT" )
 	echo $SSID
 	if [[ ! -z $SSID ]]; then
@@ -190,7 +191,7 @@ function status() {
 		STATUS_LINES=$((STATUS_LINES+2))
 	fi
 	ETH_STATUS=("$(nmcli device | awk '$2=="ethernet" {print $1}'):\n\t"$(nmcli -t -f GENERAL.CONNECTION dev show eth0 |  cut -d ':' -f2)" ~ "$(nmcli -t -f IP4.ADDRESS dev show eth0 | cut -d / -f1 | cut -d ':' -f2) )
-	echo -e "$ETH_STATUS\n${WLAN_STATUS[@]}\n"| rofi -dmenu -p "Status" -lines "$STATUS_LINES" -location "$POSITION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -width -"33" -font "$FONT"
+	echo -e "$ETH_STATUS\n${WLAN_STATUS[@]}\n"| rofi -dmenu -p "Status" -lines "$STATUS_LINES" -location "$POSITION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -width -"$WIDTH" -font "$FONT"
 }
 function main() {
 	WLAN_INT=0
