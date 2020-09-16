@@ -22,7 +22,7 @@ function wireless_interface_state() {
 		LINES=$(($(echo "$WIFI_LIST" | wc -l)+4))
 	elif [[ "$WIFI_CON_STATE" =~ "connected" ]]; then
 		WIFI_LIST=$(nmcli --fields IN-USE,SSID,SECURITY,BARS device wifi list ifname ${WIRELESS_INTERFACES[WLAN_INT]} | sed "s/^IN-USE\s//g" | sed "/*/d" | sed "s/^ *//")
-		if [[ -z "$ACTIVE_SSID" ]]; then
+		if [[ "$ACTIVE_SSID" == "--" ]]; then
 			WIFI_SWITCH="~Wi-Fi Off"
 			LINES=$(($(echo "$WIFI_LIST" | wc -l)+4))
 		else
@@ -89,10 +89,11 @@ function disconnect() {
 	nmcli con down id  "$TRUE_ACTIVE_SSID"
 }
 function connect() {
-	notification "5" "critical" "Wi-Fi" "Connecting to $1"
-	if [[ "$(nmcli device status | grep ${WIRELESS_INTERFACES[WLAN_INT]} | awk '{print $3}')" =~ "connected" ]]; then
+	
+	if [[ "$(nmcli device status | grep ${WIRELESS_INTERFACES[WLAN_INT]} | awk '{print $3}')" == "connected" ]]; then
 		disconnect "5" "low" "Connection_Terminated"
 	fi
+	notification "5" "critical" "Wi-Fi" "Connecting to $1"
 	if [ $(nmcli dev wifi con "$1" password "$2" ifname ${WIRELESS_INTERFACES[WLAN_INT]}| grep -c "successfully activated" ) = "1" ]; then
 		notification "5" "normal" "Connection_Established" "You're now connected to Wi-Fi network '$1' "
 	else
@@ -100,7 +101,10 @@ function connect() {
 	fi
 }
 function stored_connection() {
-	notification "5" "low" "Wi-Fi" "Connecting to $1" "btsync-gui-0"
+	if [[ "$(nmcli device status | grep ${WIRELESS_INTERFACES[WLAN_INT]} | awk '{print $3}')" == "connected" ]]; then
+		disconnect "5" "low" "Connection_Terminated"
+	fi
+	notification "5" "critical" "Wi-Fi" "Connecting to $1"
 	if [ $(nmcli dev wifi con "$1" ifname ${WIRELESS_INTERFACES[WLAN_INT]}| grep -c "successfully activated" ) = "1" ]; then
 		notification "5" "normal" "Connection_Established" "You're now connected to Wi-Fi network '$1' "
 	else
@@ -160,7 +164,7 @@ function selection_action () {
 				if [ "$SSID_SELECTION" = "*" ]; then
 					SSID_SELECTION=$(echo "$SELECTION" | sed  "s/\s\{2,\}/\|/g "| awk -F "|" '{print $3}')
 				fi
-				if [[ "$ACTIVE_SSID" = "$SSID_SELECTION" ]]; then
+				if [[ "$ACTIVE_SSID" == "$SSID_SELECTION" ]]; then
 					nmcli con up "$SSID_SELECTION" ifname ${WIRELESS_INTERFACES[WLAN_INT]}
 				else
 					if [[ "$SELECTION" =~ "WPA2" ]] || [[ "$SELECTION" =~ "WEP" ]]; then
