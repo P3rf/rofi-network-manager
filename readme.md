@@ -27,8 +27,8 @@ Inspired from [rofi-wifi-menu](https://github.com/zbaylin/rofi-wifi-menu).
 * Status 
 	* See devices Connection name and local IP
 ### Screenshots
+<img src="https://raw.githubusercontent.com/P3rf/rofi-network-manager/master/desktop.png"/>
 <img src="https://raw.githubusercontent.com/P3rf/rofi-network-manager/master/options.png"/>
-
 ### Download-Usage
 ```
 git clone https://github.com/P3rf/rofi-network-manager.git
