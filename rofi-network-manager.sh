@@ -19,31 +19,33 @@ function wireless_interface_state() {
 	if [[ "$WIFI_CON_STATE" =~ "unavailable" ]]; then
 		WIFI_LIST="   ***Wi-Fi Disabled***   "
 		WIFI_SWITCH="~Wi-Fi On"
-		LINES=$(($(echo "$WIFI_LIST" | wc -l)+4))
+		LINES=7
 	elif [[ "$WIFI_CON_STATE" =~ "connected" ]]; then
 		WIFI_LIST=$(nmcli --fields IN-USE,SSID,SECURITY,BARS device wifi list ifname ${WIRELESS_INTERFACES[WLAN_INT]} | sed "s/^IN-USE\s//g" | sed "/*/d" | sed "s/^ *//")
+		LINES=$(echo "$WIFI_LIST" | wc -l)
 		if [[ "$ACTIVE_SSID" == "--" ]]; then
 			WIFI_SWITCH="~Wi-Fi Off"
-			LINES=$(($(echo "$WIFI_LIST" | wc -l)+4))
+			((LINES+=6))
 		else
 			WIFI_SWITCH="~Disconnect\n~Wi-Fi Off"
-			LINES=$(($(echo "$WIFI_LIST" | wc -l)+5))
+			((LINES+=7))
 		fi
 	fi
 	WIDTH=$(echo "$WIFI_LIST" | head -n 1 | awk '{print length($0); }')
 }
 function ethernet_interface_state() {
 	WIRE_CON_STATE=$(nmcli device status | grep "ethernet"  |  awk '{print $3}')
-	if [[ "$WIRE_CON_STATE" =~ "disconnected" ]]; then
+	if [[ "$WIRE_CON_STATE" == "disconnected" ]]; then
 		WIRE_SWITCH="~Eth On"
-	elif [[ "$WIRE_CON_STATE" =~ "connected" ]]; then
+	elif [[ "$WIRE_CON_STATE" == "connected" ]]; then
 		WIRE_SWITCH="~Eth Off"
-	elif [[ "$WIRE_CON_STATE" =~ "unavailable" ]]; then
+	elif [[ "$WIRE_CON_STATE" == "unavailable" ]]; then
 		WIRE_SWITCH=" ***Wired Unavailable***"
 	fi
 }
 function rofi_menu() {
 	if [[ $(nmcli dev status | grep -ow ^wlan. | wc -l) -ne "1" ]]; then
+		((LINES+=1))
 		SELECTION=$(echo -e "$WIFI_LIST\n~Scan\n~Manual\n$WIFI_SWITCH\n$WIRE_SWITCH\n~Change Wifi Interface\n~Status\n~Restart Network" | uniq -u | rofi -dmenu -p "${WIRELESS_INTERFACES[WLAN_INT]} SSID" -lines "$LINES" -a "0" -location "$POSITION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -width -"$WIDTH" -font "$FONT")
 	else
 		SELECTION=$(echo -e "$WIFI_LIST\n~Scan\n~Manual\n$WIFI_SWITCH\n$WIRE_SWITCH\n~Status\n~Restart Network" | uniq -u | rofi -dmenu -p "${WIRELESS_INTERFACES[WLAN_INT]} SSID" -lines "$LINES" -a "0" -location "$POSITION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -width -"$WIDTH" -font "$FONT")
@@ -112,14 +114,16 @@ function stored_connection() {
 	fi
 }
 function ssid_manual() {
-	check_wifi_connected
-	SSID=$(echo "Enter SSID" | rofi -dmenu  -p ">_" -a "0" -lines 1 -location "$POSITION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -width 18 -font "$FONT" )
+	
+	SSID=$(echo "Enter SSID" | rofi -dmenu  -p ">_" -mesg -a "0" -lines 1 -location "$POSITION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -width 18 -font "$FONT" )
 	echo $SSID
 	if [[ ! -z $SSID ]]; then
 		PASS=$(echo "Enter Password" | rofi -dmenu  -p ">_" -a "0"  -password -lines 1 -location "$POSITION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -width 18 -font "$FONT"  )
 		if [ "$PASS" = "" ]; then
+				check_wifi_connected
 				nmcli dev wifi con "$SSID" ifname ${WIRELESS_INTERFACES[WLAN_INT]}
 		else
+		
 				connect "$SSID" $PASS
 		fi
 	fi
@@ -188,13 +192,12 @@ function status() {
 	STATUS_LINES=4
 	if [[ $(nmcli dev status | grep -ow ^wlan. | wc -l) -ne "1" ]]; then
 		WLAN_STATUS=(${WLAN_STATUS[@]}"\n${WIRELESS_INTERFACES[1]}:\n\t"$(nmcli -t -f GENERAL.CONNECTION dev show ${WIRELESS_INTERFACES[1]} |  cut -d ':' -f2)" ~ "$(nmcli -t -f IP4.ADDRESS dev show ${WIRELESS_INTERFACES[1]} | cut -d / -f1 | cut -d ':' -f2))
-		STATUS_LINES=$((STATUS_LINES+2))
+		((STATUS_LINES+=2))
 	fi
 	ETH_STATUS=("$(nmcli device | awk '$2=="ethernet" {print $1}'):\n\t"$(nmcli -t -f GENERAL.CONNECTION dev show eth0 |  cut -d ':' -f2)" ~ "$(nmcli -t -f IP4.ADDRESS dev show eth0 | cut -d / -f1 | cut -d ':' -f2) )
 	echo -e "$ETH_STATUS\n${WLAN_STATUS[@]}\n"| rofi -dmenu -p "Status" -lines "$STATUS_LINES" -location "$POSITION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -width -"$WIDTH" -font "$FONT"
 }
 function main() {
-	WLAN_INT=0
 	initialization
 	rofi_menu
 }
