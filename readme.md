@@ -35,7 +35,7 @@ Inspired from [rofi-wifi-menu](https://github.com/zbaylin/rofi-wifi-menu).
 ````
 	# Location  
 	This sets the anchor point:
-		 +---------- +
+		+---------- +
 		| 1 | 2 | 3 |
 		| 8 | 0 | 4 |
 		| 7 | 6 | 5 |
