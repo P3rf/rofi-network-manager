@@ -7,13 +7,14 @@ Inspired from [rofi-wifi-menu](https://github.com/zbaylin/rofi-wifi-menu).
 * [Requirements](#requirements)
 * [Features](#features)
 * [Screenshots](#screenshots)
+* [Config](#config)
 * [Download-Usage](#download-usage)
 * [ToDo](#todo)
 
 ### Requirements
 * nmcli
 * [rofi](https://github.com/davatorium/rofi)
-* [dunst](https://github.com/dunst-project/dunst) (_For notifications_)
+* [dunst](https://github.com/dunst-project/dunst) (_Optional_) (_For notifications_)
 ### Features
 * Connect to an existing network
 * Disconnect from the network
@@ -29,6 +30,28 @@ Inspired from [rofi-wifi-menu](https://github.com/zbaylin/rofi-wifi-menu).
 ### Screenshots
 <img src="https://raw.githubusercontent.com/P3rf/rofi-network-manager/master/desktop.png"/>
 <img src="https://raw.githubusercontent.com/P3rf/rofi-network-manager/master/options.png"/>
+
+### Config
+````
+	# Location  
+	This sets the anchor point:
+		 +---------- +
+		| 1 | 2 | 3 |
+		| 8 | 0 | 4 |
+		| 7 | 6 | 5 |
+		+-----------+
+	If you want the window to be in the upper right corner, set location to 3.
+		LOCATION=0
+	X, Y Offset
+		Y_AXIS=0
+		X_AXIS=0
+	#Font to use
+		FONT="DejaVu Sans Mono 8"
+	#Use notifications or not
+	# Values on / off
+		NOTIFICATIONS_INIT="off"
+````
+
 
 ### Download-Usage
 ```

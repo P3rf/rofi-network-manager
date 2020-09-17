@@ -1,13 +1,24 @@
 #!/bin/bash
-POSITION=3
-Y_AXIS=15
+# Default Values
+LOCATION=0
+Y_AXIS=0
 X_AXIS=0
-FONT="DejaVu Sans Mono 9"
+FONT="DejaVu Sans Mono 8"
+NOTIFICATIONS_INIT="off"
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+if [[ -f "$DIR/rofi-network-manager.conf" ]]; then
+	source "$DIR/rofi-network-manager.conf"
+fi
+
 PASSWORD_ENTER="if connection is stored, hit enter/esc"
 WIRELESS_INTERFACES=($(nmcli device | awk '$2=="wifi" {print $1}'))
 WLAN_INT=0
 function notification() {
-	dunstify -r $1 -u $2 $3 "$4"
+	if [[ "$NOTIFICATIONS_INIT" == "on" ]]; then
+		dunstify -r $1 -u $2 $3 "$4" -i "$5"
+	fi
+}
 }
 function initialization() {
 	wireless_interface_state
@@ -46,9 +57,9 @@ function ethernet_interface_state() {
 function rofi_menu() {
 	if [[ $(nmcli dev status | grep -ow ^wlan. | wc -l) -ne "1" ]]; then
 		((LINES+=1))
-		SELECTION=$(echo -e "$WIFI_LIST\n~Scan\n~Manual\n$WIFI_SWITCH\n$WIRE_SWITCH\n~Change Wifi Interface\n~Status\n~Restart Network" | uniq -u | rofi -dmenu -p "${WIRELESS_INTERFACES[WLAN_INT]} SSID" -lines "$LINES" -a "0" -location "$POSITION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -width -"$WIDTH" -font "$FONT")
+		SELECTION=$(echo -e "$WIFI_LIST\n~Scan\n~Manual\n$WIFI_SWITCH\n$WIRE_SWITCH\n~Change Wifi Interface\n~Status\n~Restart Network" | uniq -u | rofi -dmenu -p "${WIRELESS_INTERFACES[WLAN_INT]} SSID" -lines "$LINES" -a "0" -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -width -"$WIDTH" -font "$FONT")
 	else
-		SELECTION=$(echo -e "$WIFI_LIST\n~Scan\n~Manual\n$WIFI_SWITCH\n$WIRE_SWITCH\n~Status\n~Restart Network" | uniq -u | rofi -dmenu -p "${WIRELESS_INTERFACES[WLAN_INT]} SSID" -lines "$LINES" -a "0" -location "$POSITION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -width -"$WIDTH" -font "$FONT")
+		SELECTION=$(echo -e "$WIFI_LIST\n~Scan\n~Manual\n$WIFI_SWITCH\n$WIRE_SWITCH\n~Status\n~Restart Network" | uniq -u | rofi -dmenu -p "${WIRELESS_INTERFACES[WLAN_INT]} SSID" -lines "$LINES" -a "0" -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -width -"$WIDTH" -font "$FONT")
 	fi
 	SSID_SELECTION=$(echo "$SELECTION" | sed  "s/\s\{2,\}/\|/g" | awk -F "|" '{print $1}')
 	selection_action
@@ -115,10 +126,10 @@ function stored_connection() {
 }
 function ssid_manual() {
 	
-	SSID=$(echo "Enter SSID" | rofi -dmenu  -p ">_" -mesg -a "0" -lines 1 -location "$POSITION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -width 18 -font "$FONT" )
+	SSID=$(echo "Enter SSID" | rofi -dmenu  -p ">_" -mesg -a "0" -lines 1 -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -width 18 -font "$FONT" )
 	echo $SSID
 	if [[ ! -z $SSID ]]; then
-		PASS=$(echo "Enter Password" | rofi -dmenu  -p ">_" -a "0"  -password -lines 1 -location "$POSITION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -width 18 -font "$FONT"  )
+		PASS=$(echo "Enter Password" | rofi -dmenu  -p ">_" -a "0"  -password -lines 1 -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -width 18 -font "$FONT"  )
 		if [ "$PASS" = "" ]; then
 				check_wifi_connected
 				nmcli dev wifi con "$SSID" ifname ${WIRELESS_INTERFACES[WLAN_INT]}
@@ -173,7 +184,7 @@ function selection_action () {
 					nmcli con up "$SSID_SELECTION" ifname ${WIRELESS_INTERFACES[WLAN_INT]}
 				else
 					if [[ "$SELECTION" =~ "WPA2" ]] || [[ "$SELECTION" =~ "WEP" ]]; then
-						PASS=$(echo "$PASSWORD_ENTER" | rofi -dmenu -p ">_" -password -a "0" -location "$POSITION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -width 16 -lines 1 -font "$FONT" )
+						PASS=$(echo "$PASSWORD_ENTER" | rofi -dmenu -p ">_" -password -a "0" -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -width 16 -lines 1 -font "$FONT" )
 					fi
 					if [[ ! -z "$PASS" ]] ; then
 						if [[ "$PASS" =~ "$PASSWORD_ENTER" ]]; then
@@ -195,7 +206,7 @@ function status() {
 		((STATUS_LINES+=2))
 	fi
 	ETH_STATUS=("$(nmcli device | awk '$2=="ethernet" {print $1}'):\n\t"$(nmcli -t -f GENERAL.CONNECTION dev show eth0 |  cut -d ':' -f2)" ~ "$(nmcli -t -f IP4.ADDRESS dev show eth0 | cut -d / -f1 | cut -d ':' -f2) )
-	echo -e "$ETH_STATUS\n${WLAN_STATUS[@]}\n"| rofi -dmenu -p "Status" -lines "$STATUS_LINES" -location "$POSITION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -width -"$WIDTH" -font "$FONT"
+	echo -e "$ETH_STATUS\n${WLAN_STATUS[@]}\n"| rofi -dmenu -p "Status" -lines "$STATUS_LINES" -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -width -"$WIDTH" -font "$FONT"
 }
 function main() {
 	initialization
