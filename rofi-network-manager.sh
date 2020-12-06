@@ -19,7 +19,6 @@ function notification() {
 		dunstify -r $1 -u $2 $3 "$4" -i "$5"
 	fi
 }
-}
 function initialization() {
 	wireless_interface_state
 	ethernet_interface_state
