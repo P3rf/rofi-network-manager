@@ -19,7 +19,7 @@ Inspired from [rofi-wifi-menu](https://github.com/zbaylin/rofi-wifi-menu).
 * Connect to an existing network
 * Disconnect from the network
 * Turn on/off wifi
-* Support for Multiple wifi devices (_Up to two_)
+* Support for Multiple wifi devices
 	* Option to change between wifi devices when available
 * Manual Connection to a hidden wifi
 * Turn on/off ethernet
@@ -62,7 +62,7 @@ bash "./rofi-network-manager.sh"
 
 
 ### ToDo
- * Tweak notifications
- * Add notifications icons
- * Support for more wifi devices
- * Add Hotspot support
+ - [ ]Tweak notifications
+ - [ ] Add notifications icons
+ - [x]Support for more wifi devices
+ - [ ] Add Hotspot support
