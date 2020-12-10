@@ -62,7 +62,7 @@ bash "./rofi-network-manager.sh"
 
 
 ### ToDo
- - [ ]Tweak notifications
- - [ ] Add notifications icons
- - [x]Support for more wifi devices
- - [ ] Add Hotspot support
+ * [ ] Tweak notifications
+ * [ ] Add notifications icons
+ * [x] Support for more wifi devices
+ * [ ] Add Hotspot support
