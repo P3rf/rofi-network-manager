@@ -60,33 +60,41 @@ function ethernet_interface_state() {
 	fi
 }
 function rofi_menu() {
-	if [[ $(nmcli dev status | grep -ow ^wlan. | wc -l) -ne "1" ]]; then
+	if [[ $(nmcli dev status | awk '{print $2}' | grep ^wifi$ | wc -l) -ne "1" ]]; then
 		((LINES+=1))
-		SELECTION=$(echo -e "$WIFI_LIST\n~Scan\n~Manual\n$WIFI_SWITCH\n$WIRE_SWITCH\n~Change Wifi Interface\n~Status\n~Restart Network" | uniq -u | rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -font "$FONT" -a "0" -lines "$LINES" -width -"$WIDTH" -p "${WIRELESS_INTERFACES_PRODUCT[WLAN_INT]}[${WIRELESS_INTERFACES[WLAN_INT]}]")
+		SELECTION=$(echo -e "$WIFI_LIST\n~Scan\n~Manual\n$WIFI_SWITCH\n$WIRE_SWITCH\n~Change Wifi Interface\n~Status\n~Restart Network" | uniq -u | \
+		rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -font "$FONT" \
+		-a "0" -lines "$LINES" -width -"$WIDTH" \
+		-p "${WIRELESS_INTERFACES_PRODUCT[WLAN_INT]}[${WIRELESS_INTERFACES[WLAN_INT]}]")
 	else
-		SELECTION=$(echo -e "$WIFI_LIST\n~Scan\n~Manual\n$WIFI_SWITCH\n$WIRE_SWITCH\n~Status\n~Restart Network" | uniq -u | rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -font "$FONT" -a "0" -lines "$LINES" -width -"$WIDTH" -p "${WIRELESS_INTERFACES_PRODUCT[WLAN_INT]}[${WIRELESS_INTERFACES[WLAN_INT]}]")
+		SELECTION=$(echo -e "$WIFI_LIST\n~Scan\n~Manual\n$WIFI_SWITCH\n$WIRE_SWITCH\n~Status\n~Restart Network" | uniq -u | \
+		rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -font "$FONT" \
+		-a "0" -lines "$LINES" -width -"$WIDTH" \
+		-p "${WIRELESS_INTERFACES_PRODUCT[WLAN_INT]}[${WIRELESS_INTERFACES[WLAN_INT]}]")
 	fi
 	SSID_SELECTION=$(echo "$SELECTION" | sed  "s/\s\{2,\}/\|/g" | awk -F "|" '{print $1}')
 	selection_action
 }
 function change_wireless_interface() {
-	if [[ $(nmcli dev status | grep -ow ^wlan. | wc -l) -eq "2" ]]; then
+	if [[ $(nmcli dev status | awk '{print $2}' | grep ^wifi$ | wc -l) -eq "2" ]]; then
 		if [[ $WLAN_INT -eq "0" ]]; then
 			WLAN_INT=1
 		else
 			WLAN_INT=0
 		fi
 	else
-		TEMP=""
 		for i in "${!WIRELESS_INTERFACES[@]}"
 		do
-			TEMP=(${TEMP[@]}"${WIRELESS_INTERFACES_PRODUCT[$i]}[${WIRELESS_INTERFACES[$i]}]\n")
+			LIST_WLAN_INT=(${LIST_WLAN_INT[@]}"${WIRELESS_INTERFACES_PRODUCT[$i]}[${WIRELESS_INTERFACES[$i]}]\n")
 		done
-		LINES=$(nmcli dev status | grep -ow ^wlan. | wc -l)
-		TEST=$(echo -e  ${TEMP[@]}| rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -font "$FONT" -a "0" -lines "$LINES" -width -16 -p ">_")
+		LINES=$(nmcli dev status | awk '{print $2}' | grep ^wifi$ | wc -l)
+		CHANGE_WLAN_INT=$(echo -e  ${LIST_WLAN_INT[@]}| \
+		rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -font "$FONT"\
+		-a "0" -lines "$LINES" -width -16\
+		-p ">_")
 		for i in "${!WIRELESS_INTERFACES[@]}"
 		do
-			if [[ $TEST == "${WIRELESS_INTERFACES_PRODUCT[$i]}[${WIRELESS_INTERFACES[$i]}]" ]];then
+			if [[ $CHANGE_WLAN_INT == "${WIRELESS_INTERFACES_PRODUCT[$i]}[${WIRELESS_INTERFACES[$i]}]" ]];then
 				WLAN_INT=$i
 				break			
 			fi
@@ -148,10 +156,16 @@ function stored_connection() {
 }
 function ssid_manual() {
 	
-	SSID=$(echo "Enter SSID" | rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -font "$FONT" -a "0" -lines 1 -width 18  -p ">_")
+	SSID=$(echo "Enter SSID" | \
+	rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -font "$FONT" \
+	-a "0" -lines 1 -width 18 \
+	-p ">_")
 	echo $SSID
 	if [[ ! -z $SSID ]]; then
-		PASS=$(echo "Enter Password" | rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -font "$FONT" -a "0" -lines 1 -width 18 -password -p ">_")
+		PASS=$(echo "Enter Password" | \
+		rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -font "$FONT" \
+		-a "0" -lines 1 -width 18 -password \
+		-p ">_")
 		if [ "$PASS" = "" ]; then
 				check_wifi_connected
 				nmcli dev wifi con "$SSID" ifname ${WIRELESS_INTERFACES[WLAN_INT]}
@@ -165,11 +179,14 @@ function status() {
 	LINES=2
 	for i in "${!WIRELESS_INTERFACES[@]}"
 	do
-		WLAN_STATUS=(${WLAN_STATUS[@]}"${WIRELESS_INTERFACES_PRODUCT[$i]}[${WIRELESS_INTERFACES[$i]}]:\n\t$(nmcli -t -f GENERAL.CONNECTION dev show ${WIRELESS_INTERFACES[$i]} |  cut -d ':' -f2) ~ $(nmcli -t -f IP4.ADDRESS dev show ${WIRELESS_INTERFACES[$i]} | cut -d / -f1 | cut -d ':' -f2)\n")
+		WLAN_STATUS=(${WLAN_STATUS[@]}"${WIRELESS_INTERFACES_PRODUCT[$i]}[${WIRELESS_INTERFACES[$i]}]:\n\t$(nmcli -t -f GENERAL.CONNECTION dev show ${WIRELESS_INTERFACES[$i]} | awk -F '[:]' '{print $2}') ~ $(nmcli -t -f IP4.ADDRESS dev show ${WIRELESS_INTERFACES[$i]} | awk -F '[:/]' '{print $2}')\n")
 		((LINES+=2))
 	done
-	ETH_STATUS=("$(nmcli device | awk '$2=="ethernet" {print $1}'):\n\t"$(nmcli -t -f GENERAL.CONNECTION dev show eth0 |  cut -d ':' -f2)" ~ "$(nmcli -t -f IP4.ADDRESS dev show eth0 | cut -d / -f1 | cut -d ':' -f2) )
-	echo -e "$ETH_STATUS\n${WLAN_STATUS[@]}\n"| rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -font "$FONT"  -lines "$LINES" -width -"$WIDTH" -p "Status"
+	ETH_STATUS=("$(nmcli device | awk '$2=="ethernet" {print $1}'):\n\t"$(nmcli -t -f GENERAL.CONNECTION dev show eth0 | awk -F '[:]' '{print $2}')" ~ "$(nmcli -t -f IP4.ADDRESS dev show eth0 | awk -F '[:/]' '{print $2}') )
+	echo -e "$ETH_STATUS\n${WLAN_STATUS[@]}\n"| \
+	rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -font "$FONT" \
+	-lines "$LINES" -width -"$WIDTH" \
+	-p "Status"
 }
 function selection_action () {
 	case "$SELECTION" in
@@ -216,7 +233,10 @@ function selection_action () {
 					nmcli con up "$SSID_SELECTION" ifname ${WIRELESS_INTERFACES[WLAN_INT]}
 				else
 					if [[ "$SELECTION" =~ "WPA2" ]] || [[ "$SELECTION" =~ "WEP" ]]; then
-						PASS=$(echo "$PASSWORD_ENTER" | rofi -dmenu -p ">_" -password -a "0" -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -width 16 -lines 1 -font "$FONT" )
+						PASS=$(echo "$PASSWORD_ENTER" | \
+						rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -font "$FONT" \
+						-a "0" -lines 1  -width 16 -password \
+						-p ">_")
 					fi
 					if [[ ! -z "$PASS" ]] ; then
 						if [[ "$PASS" =~ "$PASSWORD_ENTER" ]]; then
