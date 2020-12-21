@@ -60,7 +60,7 @@ function ethernet_interface_state() {
 	fi
 }
 function rofi_menu() {
-	if [[ $(nmcli dev status | awk '{print $2}' | grep ^wifi$ | wc -l) -ne "1" ]]; then
+	if [[ $(nmcli device | awk '$2=="wifi" {print $1}' | wc -l) -ne "1" ]]; then
 		((LINES+=1))
 		SELECTION=$(echo -e "$WIFI_LIST\n~Scan\n~Manual\n$WIFI_SWITCH\n$WIRE_SWITCH\n~Change Wifi Interface\n~Status\n~Restart Network" | uniq -u | \
 		rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -font "$FONT" \
@@ -76,7 +76,7 @@ function rofi_menu() {
 	selection_action
 }
 function change_wireless_interface() {
-	if [[ $(nmcli dev status | awk '{print $2}' | grep ^wifi$ | wc -l) -eq "2" ]]; then
+	if [[ $(nmcli device | awk '$2=="wifi" {print $1}' | wc -l) -eq "2" ]]; then
 		if [[ $WLAN_INT -eq "0" ]]; then
 			WLAN_INT=1
 		else
@@ -87,7 +87,7 @@ function change_wireless_interface() {
 		do
 			LIST_WLAN_INT=(${LIST_WLAN_INT[@]}"${WIRELESS_INTERFACES_PRODUCT[$i]}[${WIRELESS_INTERFACES[$i]}]\n")
 		done
-		LINES=$(nmcli dev status | awk '{print $2}' | grep ^wifi$ | wc -l)
+		LINES=$(nmcli device | awk '$2=="wifi" {print $1}' | wc -l)
 		CHANGE_WLAN_INT=$(echo -e  ${LIST_WLAN_INT[@]}| \
 		rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -font "$FONT"\
 		-a "0" -lines "$LINES" -width -16\
