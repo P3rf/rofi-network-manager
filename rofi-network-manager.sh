@@ -6,10 +6,8 @@ Y_AXIS=0
 X_AXIS=0
 NOTIFICATIONS_INIT="off"
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-if [[ -f "$DIR/rofi-network-manager.conf" ]]; then
-	source "$DIR/rofi-network-manager.conf"
-fi
+
+source "${XDG_CONFIG_HOME-$HOME/.config}/rofi-network-manager/rofi-network-manager.conf"
 
 PASSWORD_ENTER="if connection is stored, hit enter/esc"
 WIRELESS_INTERFACES=($(nmcli device | awk '$2=="wifi" {print $1}'))
