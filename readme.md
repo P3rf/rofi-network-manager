@@ -8,7 +8,7 @@ Inspired from [rofi-wifi-menu](https://github.com/zbaylin/rofi-wifi-menu).
 * [Features](#features)
 * [Screenshots](#screenshots)
 * [Config](#config)
-* [Download-Usage](#download-usage)
+* [Installation](#Installation)
 * [ToDo](#todo)
 
 ### Requirements
@@ -25,7 +25,7 @@ Inspired from [rofi-wifi-menu](https://github.com/zbaylin/rofi-wifi-menu).
 * Turn on/off ethernet
 	* See when ethernet is unavailable
 * Restart the network
-* Status 
+* Status
 	* See devices Connection name and local IP
 ### Screenshots
 <img src="https://raw.githubusercontent.com/P3rf/rofi-network-manager/master/desktop.png"/>
@@ -33,7 +33,7 @@ Inspired from [rofi-wifi-menu](https://github.com/zbaylin/rofi-wifi-menu).
 
 ### Config
 ````
-	# Location  
+	# Location
 	This sets the anchor point:
 		+---------- +
 		| 1 | 2 | 3 |
@@ -53,13 +53,12 @@ Inspired from [rofi-wifi-menu](https://github.com/zbaylin/rofi-wifi-menu).
 ````
 
 
-### Download-Usage
+### Installation
 ```
 git clone https://github.com/P3rf/rofi-network-manager.git
 cd rofi-network-manager
-bash "./rofi-network-manager.sh"
+sudo make install
 ```
-
 
 ### ToDo
  * [ ] Tweak notifications
