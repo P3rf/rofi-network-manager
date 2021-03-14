@@ -1,9 +1,9 @@
 #!/bin/bash
+
 # Default Values
 LOCATION=0
 Y_AXIS=0
 X_AXIS=0
-FONT="DejaVu Sans Mono 8"
 NOTIFICATIONS_INIT="off"
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -63,12 +63,12 @@ function rofi_menu() {
 	if [[ $(nmcli device | awk '$2=="wifi" {print $1}' | wc -l) -ne "1" ]]; then
 		((LINES+=1))
 		SELECTION=$(echo -e "$WIFI_LIST\n~Scan\n~Manual\n$WIFI_SWITCH\n$WIRE_SWITCH\n~Change Wifi Interface\n~Status\n~Restart Network" | uniq -u | \
-		rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -font "$FONT" \
+		rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS"  \
 		-a "0" -lines "$LINES" -width -"$WIDTH" \
 		-p "${WIRELESS_INTERFACES_PRODUCT[WLAN_INT]}[${WIRELESS_INTERFACES[WLAN_INT]}]")
 	else
 		SELECTION=$(echo -e "$WIFI_LIST\n~Scan\n~Manual\n$WIFI_SWITCH\n$WIRE_SWITCH\n~Status\n~Restart Network" | uniq -u | \
-		rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -font "$FONT" \
+		rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS"  \
 		-a "0" -lines "$LINES" -width -"$WIDTH" \
 		-p "${WIRELESS_INTERFACES_PRODUCT[WLAN_INT]}[${WIRELESS_INTERFACES[WLAN_INT]}]")
 	fi
@@ -89,14 +89,14 @@ function change_wireless_interface() {
 		done
 		LINES=$(nmcli device | awk '$2=="wifi" {print $1}' | wc -l)
 		CHANGE_WLAN_INT=$(echo -e  ${LIST_WLAN_INT[@]}| \
-		rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -font "$FONT"\
+		rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
 		-a "0" -lines "$LINES" -width -16\
 		-p ">_")
 		for i in "${!WIRELESS_INTERFACES[@]}"
 		do
 			if [[ $CHANGE_WLAN_INT == "${WIRELESS_INTERFACES_PRODUCT[$i]}[${WIRELESS_INTERFACES[$i]}]" ]];then
 				WLAN_INT=$i
-				break			
+				break
 			fi
 		done
 	fi
@@ -128,7 +128,7 @@ function net_restart() {
 }
 function disconnect() {
 	TRUE_ACTIVE_SSID=$(nmcli -t -f GENERAL.CONNECTION dev show ${WIRELESS_INTERFACES[WLAN_INT]} |  cut -d ':' -f2)
-	notification $1 $2 $3 "You're now disconnected from Wi-Fi network '$TRUE_ACTIVE_SSID'" 
+	notification $1 $2 $3 "You're now disconnected from Wi-Fi network '$TRUE_ACTIVE_SSID'"
 	nmcli con down id  "$TRUE_ACTIVE_SSID"
 }
 function check_wifi_connected(){
@@ -155,22 +155,20 @@ function stored_connection() {
 	fi
 }
 function ssid_manual() {
-	
 	SSID=$(echo "Enter SSID" | \
-	rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -font "$FONT" \
+	rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS"  \
 	-a "0" -lines 1 -width 18 \
 	-p ">_")
 	echo $SSID
 	if [[ ! -z $SSID ]]; then
 		PASS=$(echo "Enter Password" | \
-		rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -font "$FONT" \
+		rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS"  \
 		-a "0" -lines 1 -width 18 -password \
 		-p ">_")
 		if [ "$PASS" = "" ]; then
 				check_wifi_connected
 				nmcli dev wifi con "$SSID" ifname ${WIRELESS_INTERFACES[WLAN_INT]}
 		else
-		
 				connect "$SSID" $PASS
 		fi
 	fi
@@ -184,7 +182,7 @@ function status() {
 	done
 	ETH_STATUS=("$(nmcli device | awk '$2=="ethernet" {print $1}'):\n\t"$(nmcli -t -f GENERAL.CONNECTION dev show eth0 | awk -F '[:]' '{print $2}')" ~ "$(nmcli -t -f IP4.ADDRESS dev show eth0 | awk -F '[:/]' '{print $2}') )
 	echo -e "$ETH_STATUS\n${WLAN_STATUS[@]}\n"| \
-	rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -font "$FONT" \
+	rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS"  \
 	-lines "$LINES" -width -"$WIDTH" \
 	-p "Status"
 }
@@ -234,7 +232,7 @@ function selection_action () {
 				else
 					if [[ "$SELECTION" =~ "WPA2" ]] || [[ "$SELECTION" =~ "WEP" ]]; then
 						PASS=$(echo "$PASSWORD_ENTER" | \
-						rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -font "$FONT" \
+						rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
 						-a "0" -lines 1  -width 16 -password \
 						-p ">_")
 					fi
