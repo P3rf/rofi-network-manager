@@ -4,12 +4,10 @@ LOCATION=0
 Y_AXIS=0
 X_AXIS=0
 NOTIFICATIONS_INIT="off"
-
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 if [[ -f "$DIR/rofi-network-manager.conf" ]]; then
 	source "$DIR/rofi-network-manager.conf"
 fi
-
 PASSWORD_ENTER="if connection is stored, hit enter/esc"
 WIRELESS_INTERFACES=($(nmcli device | awk '$2=="wifi" {print $1}'))
 WIRELESS_INTERFACES_PRODUCT=()
@@ -41,13 +39,12 @@ function wireless_interface_state() {
 			WIFI_SWITCH="~Wi-Fi Off"
 			((LINES+=6))
 		else
-			WIFI_SWITCH="~Disconnect\n~Wi-Fi Off"
-			((LINES+=7))
+			WIFI_SWITCH="~Disconnect\n~Share Wifi Password\n~Wi-Fi Off"
+			((LINES+=8))
 		fi
 	fi
 	WIDTH=$(echo "$WIFI_LIST" | head -n 1 | awk '{print length($0); }')
 	((WIDTH+=0))
-
 }
 function ethernet_interface_state() {
 	WIRE_CON_STATE=$(nmcli device status | grep "ethernet"  |  awk '{print $3}')
@@ -97,7 +94,7 @@ function change_wireless_interface() {
 		do
 			if [[ $CHANGE_WLAN_INT == "${WIRELESS_INTERFACES_PRODUCT[$i]}[${WIRELESS_INTERFACES[$i]}]" ]];then
 				WLAN_INT=$i
-				break			
+				break
 			fi
 		done
 	fi
@@ -129,7 +126,7 @@ function net_restart() {
 }
 function disconnect() {
 	TRUE_ACTIVE_SSID=$(nmcli -t -f GENERAL.CONNECTION dev show ${WIRELESS_INTERFACES[WLAN_INT]} |  cut -d ':' -f2)
-	notification $1 $2 $3 "You're now disconnected from Wi-Fi network '$TRUE_ACTIVE_SSID'" 
+	notification $1 $2 $3 "You're now disconnected from Wi-Fi network '$TRUE_ACTIVE_SSID'"
 	nmcli con down id  "$TRUE_ACTIVE_SSID"
 }
 function check_wifi_connected(){
@@ -172,8 +169,9 @@ function ssid_manual() {
 		if [ "$PASS" = "" ]; then
 				check_wifi_connected
 				nmcli dev wifi con "$SSID" ifname ${WIRELESS_INTERFACES[WLAN_INT]}
+
 		else
-		
+
 				connect "$SSID" $PASS
 		fi
 	fi
@@ -192,6 +190,16 @@ function status() {
 	rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS"  \
 	-theme-str 'window {width: '"$((($WIDTH/2)+2))"'em;}listview{lines: '"$LINES"';}textbox-prompt-colon{expand:true;str:"'$PROMPT'";}'
 }
+function share_pass() {
+	LINES=1
+	PROMPT=">_"
+	NOW_SSID=$(nmcli -t -f active,ssid dev wifi | grep ^yes | cut -d: -f2- | sort -u)
+	PASSWORD=$(nmcli -s -g 802-11-wireless-security.psk connection show "$NOW_SSID")
+	WIDTH=$(echo $NOW_SSID" : "$PASSWORD | awk '{print length}' )
+	echo -e "$NOW_SSID" : "$PASSWORD\n"| \
+	rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS"  \
+	-theme-str 'window {width: '"$((($WIDTH/2)+2))"'em;}listview{lines: '"$LINES"';}textbox-prompt-colon{expand:true;str:"'$PROMPT'";}'
+}
 function selection_action () {
 	case "$SELECTION" in
 		"~Disconnect")
@@ -202,6 +210,9 @@ function selection_action () {
 			;;
 		"~Status")
 			status
+			;;
+		"~Share Wifi Password")
+			share_pass
 			;;
 		"~Manual")
 			ssid_manual

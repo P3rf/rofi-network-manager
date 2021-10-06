@@ -31,6 +31,7 @@ Inspired from [rofi-wifi-menu](https://github.com/zbaylin/rofi-wifi-menu).
 * Restart the network
 * Status
   * See devices Connection name and local IP
+* See Current wifi password
 
 ### Screenshots
 
@@ -40,7 +41,7 @@ Inspired from [rofi-wifi-menu](https://github.com/zbaylin/rofi-wifi-menu).
 ### Config
 
 ````
-	# Location  
+	# Location
 	This sets the anchor point:
 		+---------- +
 		| 1 | 2 | 3 |
