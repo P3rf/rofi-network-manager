@@ -1,19 +1,18 @@
+
 # Rofi-NetWork-manager
 
 A nework manager for Tiling Window Managers [i3/bspwm/awesome/etc] or not.
 Inspired from [rofi-wifi-menu](https://github.com/zbaylin/rofi-wifi-menu).
 
 ## Table of Contents
-
 * [Requirements](#requirements)
 * [Features](#features)
 * [Screenshots](#screenshots)
 * [Config](#config)
 * [Download-Usage](#download-usage)
+* [Examples-Usage](#examples-usage)
 * [ToDo](#todo)
-
 ### Requirements
-
 * nmcli
 * [rofi](https://github.com/davatorium/rofi)
 * [dunst](https://github.com/dunst-project/dunst) (_Optional_) (_For notifications_)
@@ -32,9 +31,7 @@ Inspired from [rofi-wifi-menu](https://github.com/zbaylin/rofi-wifi-menu).
 * Status
   * See devices Connection name and local IP
 * See Current wifi password
-
 ### Screenshots
-
 <img src="https://raw.githubusercontent.com/P3rf/rofi-network-manager/master/desktop.png"/>
 <img src="https://raw.githubusercontent.com/P3rf/rofi-network-manager/master/options.png"/>
 
@@ -59,16 +56,55 @@ Inspired from [rofi-wifi-menu](https://github.com/zbaylin/rofi-wifi-menu).
 ````
 
 ### Download-Usage
-
 ```
 git clone https://github.com/P3rf/rofi-network-manager.git
 cd rofi-network-manager
 bash "./rofi-network-manager.sh"
 ```
+### Examples-Usage
 
+**Polybar modules**
+```
+[module/wireless-network]
+	type = internal/network
+	interface = wlan0
+	interval = 3.0
+	unknown-as-up = true
+	format-connected-background  = ${colors.background}
+	format-connected-foreground  = ${colors.foreground}
+	format-connected-padding = 1
+	format-connected = %{A1:$HOME/.../scripts/rofi-network-manager/rofi-network-manager.sh:}<ramp-signal> <label-connected>%{A}
+	label-connected = %essid%/%local_ip%
+	format-disconnected-background  = ${colors.background}
+	format-disconnected-foreground = ${colors.foreground}
+	format-disconnected-padding = 1
+	format-disconnected = %{A1:$HOME/.../scripts/rofi-network-manager/rofi-network-manager.sh:}<label-disconnected>%{A}
+	label-disconnected =""
+	ramp-signal-0 = "󰤯"
+	ramp-signal-1 = "󰤟"
+	ramp-signal-2 = "󰤢"
+	ramp-signal-3 = "󰤥"
+	ramp-signal-4 = "󰤨"
+	ramp-signal-foreground = ${colors.white}
+```
+```
+[module/wired-network]
+	type = internal/network
+	interface = eth0
+	interval = 3.0
+	format-connected-background  = ${colors.background}
+	format-connected-foreground  = ${colors.foreground}
+	format-connected-padding = 1
+	format-connected = %{A1:$HOME/...../scripts/rofi-network-manager/rofi-network-manager.sh:}<label-connected>%{A}
+	label-connected =  %local_ip%
+	format-disconnected-background  = ${colors.background}
+	format-disconnected-foreground = ${colors.foreground-alt}
+	format-disconnected-padding = 1
+	format-disconnected = %{A1:$HOME/..../scripts/rofi-network-manager/rofi-network-manager.sh:}<label-disconnected>%{A}
+	label-disconnected ="󰌺"
+```
 ### ToDo
-
 * [ ] Tweak notifications
 * [ ] Add notifications icons
-* [X] Support for more wifi devices
+* [X] Support for multiple wifi devices
 * [ ] Add Hotspot support
