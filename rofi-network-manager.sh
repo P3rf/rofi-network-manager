@@ -182,7 +182,7 @@ function ssid_manual() {
 	')
 	echo $SSID
 	if [[ ! -z $SSID ]]; then
-		PROMPT="Enter_Password:"
+		PROMPT="Enter_Password"
 		PASS=$(rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
 		-a "0" -password \
 		-theme-str '
@@ -290,8 +290,8 @@ function selection_action () {
 			;;
 		*)
 			LINES=1
-			WIDTH=30
-			PROMPT="Enter_SSID:"
+			WIDTH=$(echo "$PASSWORD_ENTER" | awk '{print length($0); }')
+			PROMPT="Enter_Password"
 			if [[ ! -z "$SELECTION" ]] && [[ "$WIFI_LIST" =~ .*"$SELECTION".*  ]]; then
 				if [ "$SSID_SELECTION" = "*" ]; then
 					SSID_SELECTION=$(echo "$SELECTION" | sed  "s/\s\{2,\}/\|/g "| awk -F "|" '{print $3}')
@@ -315,6 +315,8 @@ function selection_action () {
 						else
 							connect "$SSID_SELECTION" $PASS
 						fi
+					else
+						stored_connection "$SSID_SELECTION"
 					fi
 				fi
 			fi
