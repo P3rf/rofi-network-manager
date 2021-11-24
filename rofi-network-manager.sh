@@ -232,15 +232,10 @@ function status() {
 	'
 }
 function share_pass() {
-	LINES=1
+	LINES=$(nmcli dev wifi show-password | grep -e SSID:  -e Password: | wc -l)
 	PROMPT=">_"
-	NOW_SSID=$(nmcli -t -f active,ssid dev wifi | grep ^yes | cut -d: -f2- | sort -u)
-	PASSWORD=$(nmcli -s -g 802-11-wireless-security.psk connection show "$NOW_SSID")
-	WIDTH=$(echo $NOW_SSID : $PASSWORD | awk '{print length}' )
-	if [[ $WIDTH -le 20 ]];then
-		WIDTH=30
-	fi
-	echo -e "$NOW_SSID" : "$PASSWORD\n"| \
+	WIDTH=30
+	nmcli dev wifi show-password | grep -e SSID:  -e Password: | \
 	rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
 	-theme-str '
 	window{width: '"$(($WIDTH/2))"'em;}
