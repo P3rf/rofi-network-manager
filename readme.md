@@ -108,3 +108,4 @@ bash "./rofi-network-manager.sh"
 * [ ] Add notifications icons
 * [X] Support for multiple wifi devices
 * [ ] Add Hotspot support
+* [ ] Share wifi password with qrcode inside rofi
