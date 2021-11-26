@@ -16,7 +16,7 @@ Inspired from [rofi-wifi-menu](https://github.com/zbaylin/rofi-wifi-menu).
 * nmcli
 * [rofi](https://github.com/davatorium/rofi)
 * [dunst](https://github.com/dunst-project/dunst) (_Optional_) (_For notifications_)
-* [qrencode] (https://fukuchi.org/works/qrencode) (_For sharing wifi with qrcode_)
+* [qrencode](https://fukuchi.org/works/qrencode) (_For sharing wifi with qrcode_)
 
 ### Features
 
@@ -76,12 +76,12 @@ bash "./rofi-network-manager.sh"
 	format-connected-background  = ${colors.background}
 	format-connected-foreground  = ${colors.foreground}
 	format-connected-padding = 1
-	format-connected = %{A1:$HOME/.../scripts/rofi-network-manager/rofi-network-manager.sh:}<ramp-signal> <label-connected>%{A}
+	format-connected = %{A1:$HOME/.../rofi-network-manager/rofi-network-manager.sh:}<ramp-signal> <label-connected>%{A}
 	label-connected = %essid%/%local_ip%
 	format-disconnected-background  = ${colors.background}
 	format-disconnected-foreground = ${colors.foreground}
 	format-disconnected-padding = 1
-	format-disconnected = %{A1:$HOME/.../scripts/rofi-network-manager/rofi-network-manager.sh:}<label-disconnected>%{A}
+	format-disconnected = %{A1:$HOME/.../rofi-network-manager/rofi-network-manager.sh:}<label-disconnected>%{A}
 	label-disconnected =""
 	ramp-signal-0 = "󰤯"
 	ramp-signal-1 = "󰤟"
@@ -98,12 +98,12 @@ bash "./rofi-network-manager.sh"
 	format-connected-background  = ${colors.background}
 	format-connected-foreground  = ${colors.foreground}
 	format-connected-padding = 1
-	format-connected = %{A1:$HOME/...../scripts/rofi-network-manager/rofi-network-manager.sh:}<label-connected>%{A}
+	format-connected = %{A1:$HOME/.../rofi-network-manager/rofi-network-manager.sh:}<label-connected>%{A}
 	label-connected =  %local_ip%
 	format-disconnected-background  = ${colors.background}
 	format-disconnected-foreground = ${colors.foreground-alt}
 	format-disconnected-padding = 1
-	format-disconnected = %{A1:$HOME/..../scripts/rofi-network-manager/rofi-network-manager.sh:}<label-disconnected>%{A}
+	format-disconnected = %{A1:$HOME/.../rofi-network-manager/rofi-network-manager.sh:}<label-disconnected>%{A}
 	label-disconnected ="󰌺"
 ```
 ### ToDo
