@@ -16,6 +16,7 @@ Inspired from [rofi-wifi-menu](https://github.com/zbaylin/rofi-wifi-menu).
 * nmcli
 * [rofi](https://github.com/davatorium/rofi)
 * [dunst](https://github.com/dunst-project/dunst) (_Optional_) (_For notifications_)
+* [qrencode] (https://fukuchi.org/works/qrencode) (_For sharing wifi with qrcode_)
 
 ### Features
 
@@ -30,13 +31,12 @@ Inspired from [rofi-wifi-menu](https://github.com/zbaylin/rofi-wifi-menu).
 * Restart the network
 * Status
   * See devices Connection name and local IP
-* See Current wifi password
+* See Current wifi password and share it with a qrcode
 ### Screenshots
 <img src="https://raw.githubusercontent.com/P3rf/rofi-network-manager/master/desktop.png"/>
 <img src="https://raw.githubusercontent.com/P3rf/rofi-network-manager/master/options.png"/>
 
 ### Config
-
 ````
 	# Location
 	This sets the anchor point:
@@ -47,12 +47,15 @@ Inspired from [rofi-wifi-menu](https://github.com/zbaylin/rofi-wifi-menu).
 		+-----------+
 	If you want the window to be in the upper right corner, set location to 3.
 		LOCATION=0
+		QRCODE_LOCATION=LOCATION
 	X, Y Offset
 		Y_AXIS=0
 		X_AXIS=0
 	#Use notifications or not
 	# Values on / off
 		NOTIFICATIONS_INIT="off"
+	#Location of qrcode wifi image
+		QRCODE_DIR="/tmp/"
 ````
 
 ### Download-Usage
@@ -105,7 +108,7 @@ bash "./rofi-network-manager.sh"
 ```
 ### ToDo
 * [ ] Tweak notifications
-* [ ] Add notifications icons
+* [ ] ~~Add notifications icons~~
 * [X] Support for multiple wifi devices
 * [ ] Add Hotspot support
-* [ ] Share wifi password with qrcode inside rofi
+* [X] Share wifi password with qrcode inside rofi

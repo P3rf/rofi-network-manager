@@ -1,9 +1,11 @@
 #!/bin/bash
 # Default Values
 LOCATION=0
+QRCODE_LOCATION=$LOCATION
 Y_AXIS=0
 X_AXIS=0
 NOTIFICATIONS_INIT="off"
+QRCODE_DIR="/tmp/"
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 if [[ -f "$DIR/rofi-network-manager.conf" ]]; then
 	source "$DIR/rofi-network-manager.conf"
@@ -58,6 +60,7 @@ function ethernet_interface_state() {
 	fi
 }
 function rofi_menu() {
+	((WIDTH+=1))
 	PROMPT=${WIRELESS_INTERFACES_PRODUCT[WLAN_INT]}[${WIRELESS_INTERFACES[WLAN_INT]}]
 	if [[ $(nmcli device | awk '$2=="wifi" {print $1}' | wc -l) -ne "1" ]]; then
 		((LINES+=1))
@@ -233,16 +236,35 @@ function status() {
 }
 function share_pass() {
 	LINES=$(nmcli dev wifi show-password | grep -e SSID:  -e Password: | wc -l)
+	((LINES+=1))
 	PROMPT=">_"
 	WIDTH=30
-	nmcli dev wifi show-password | grep -e SSID:  -e Password: | \
+	SELECTION=$(echo -e "$(nmcli dev wifi show-password | grep -e SSID:  -e Password:)\n~QrCode" | \
 	rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
 	-theme-str '
 	window{width: '"$(($WIDTH/2))"'em;}
 	listview{lines: '"$LINES"';}
 	textbox-prompt-colon{expand:false;margin:0;str:"'$PROMPT':";}
 	entry {placeholder:"";}
-	'
+	')
+	selection_action
+}
+function gen_qrcode() {
+	qrencode -t png -o /tmp/wifi_qr.png -s 10 -m 2 "WIFI:S:"$( nmcli dev wifi show-password | grep -oP '(?<=SSID: ).*' | head -1)";T:"$(nmcli dev wifi show-password | grep -oP '(?<=Security: ).*' | head -1)";P:"$(nmcli dev wifi show-password | grep -oP '(?<=Password: ).*' | head -1)";;"
+	rofi -dmenu -location "$QRCODE_LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
+	-theme-str '* {
+	background-color: transparent;
+	text-color:       transparent;
+  	}
+  	window {
+	  padding: 1em;
+	  background-color: transparent;
+	  background-image: url("'$QRCODE_DIR'wifi_qr.png",width);
+	  width: 20em;
+ 	}
+  	listview{lines: 15;}
+  	textbox-prompt-colon{expand:false;margin:0;str:"";}
+  	entry {enabled: false;}'
 }
 function selection_action () {
 	case "$SELECTION" in
@@ -282,6 +304,9 @@ function selection_action () {
 			;;
 		"~Restart Network")
 			net_restart "7" "critical" "Network" "Restarting Network"
+			;;
+		"~QrCode")
+			gen_qrcode
 			;;
 		*)
 			LINES=1
