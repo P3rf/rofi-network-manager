@@ -124,7 +124,7 @@ format-disconnected = %{A1:$HOME/.../rofi-network-manager/rofi-network-manager.s
 label-disconnected ="󰌺"
 ```
 ### ToDo
-* [ ] Tweak notifications
+* [X] Fix notifications
 * [ ] ~~Add notifications icons~~
 * [X] Support for multiple wifi devices
 * [ ] Add Hotspot support

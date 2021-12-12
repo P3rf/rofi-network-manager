@@ -13,11 +13,6 @@ WIRELESS_INTERFACES=($(nmcli device | awk '$2=="wifi" {print $1}'))
 WIRELESS_INTERFACES_PRODUCT=()
 WLAN_INT=0
 
-function notification() {
-	if [[ "$NOTIFICATIONS_INIT" == "on" ]]; then
-		dunstify -r $1 -u $2 $3 "$4" -i "$5"
-	fi
-}
 function initialization() {
 	if [[ -f "$DIR/rofi-network-manager.conf" ]]; then
 		source "$DIR/rofi-network-manager.conf"
@@ -36,6 +31,12 @@ function initialization() {
 	wireless_interface_state
 	ethernet_interface_state
 }
+function notification() {
+	if [[ "$NOTIFICATIONS_INIT" == "on" ]]; then
+		dunstify -r $1 -u $2 $3 "$4"
+	fi
+}
+
 function wireless_interface_state() {
 	ACTIVE_SSID=$(nmcli device status | grep ${WIRELESS_INTERFACES[WLAN_INT]} |  awk '{print $4}')
 	WIFI_CON_STATE=$(nmcli device status | grep ${WIRELESS_INTERFACES[WLAN_INT]} |  awk '{print $3}')
@@ -48,7 +49,7 @@ function wireless_interface_state() {
 		LINES=$(echo "$WIFI_LIST" | wc -l)
 		if [[ "$ACTIVE_SSID" == "--" ]]; then
 			WIFI_SWITCH="~Wi-Fi Off"
-			((LINES+=6))
+			((LINES+=5))
 		else
 			WIFI_SWITCH="~Disconnect\n~Manual/Hidden\n~Share Wifi Password\n~Wi-Fi Off"
 			((LINES+=8))
@@ -125,12 +126,13 @@ function change_wireless_interface() {
 }
 function scan() {
 	if [[ "$WIFI_CON_STATE" =~ "unavailable" ]]; then
-		change_wifi_state "4" "low" "Wi-Fi" "Enabling Wi-Fi connection" "on"
+		change_wifi_state "5" "normal" "Wi-Fi" "Enabling Wi-Fi connection" "on"
 		sleep 2
 	fi
-	notification "5" "normal" "Wifi" "Please Wait Scanning"
+	notification "5" "normal" "=t 0 Wifi" "Please Wait Scanning"
 	WIFI_LIST=$(nmcli --fields IN-USE,SSID,SECURITY,BARS device wifi list ifname ${WIRELESS_INTERFACES[WLAN_INT]} --rescan yes | sed "s/^IN-USE\s//g" | sed "/*/d" | sed "s/^ *//")
 	wireless_interface_state
+	notification "5" "normal" "-t 1 Wifi" "Please Wait Scanning"
 	rofi_menu
 }
 function change_wifi_state() {
@@ -154,12 +156,12 @@ function disconnect() {
 }
 function check_wifi_connected() {
 	if [[ "$(nmcli device status | grep ${WIRELESS_INTERFACES[WLAN_INT]} | awk '{print $3}')" == "connected" ]]; then
-		disconnect "5" "low" "Connection_Terminated"
+		disconnect "5" "normal" "Connection_Terminated"
 	fi
 }
 function connect() {
 	check_wifi_connected
-	notification "5" "critical" "Wi-Fi" "Connecting to $1"
+	notification "5" "normal" "Wi-Fi" "Connecting to $1"
 	if [ $(nmcli dev wifi con "$1" password "$2" ifname ${WIRELESS_INTERFACES[WLAN_INT]}| grep -c "successfully activated" ) == "1" ]; then
 		notification "5" "normal" "Connection_Established" "You're now connected to Wi-Fi network '$1' "
 	else
@@ -168,7 +170,7 @@ function connect() {
 }
 function stored_connection() {
 	check_wifi_connected
-	notification "5" "critical" "Wi-Fi" "Connecting to $1"
+	notification "5" "normal" "Wi-Fi" "Connecting to $1"
 	if [ $(nmcli dev wifi con "$1" ifname ${WIRELESS_INTERFACES[WLAN_INT]}| grep -c "successfully activated" ) = "1" ]; then
 		notification "5" "normal" "Connection_Established" "You're now connected to Wi-Fi network '$1' "
 	else
@@ -233,7 +235,7 @@ function ssid_hidden() {
 		if [[ ! -z "$PASS" ]] ; then
 			if [[ "$PASS" =~ "$PASSWORD_ENTER" ]]; then
 				check_wifi_connected
-				notification "5" "critical" "Wi-Fi" "Connecting to $SSID"
+				notification "5" "normal" "Wi-Fi" "Connecting to $SSID"
 				if [ $(nmcli dev wifi con "$SSID" ifname ${WIRELESS_INTERFACES[WLAN_INT]} hidden yes| grep -c "successfully activated" ) = "1" ]; then
 					notification "5" "normal" "Connection_Established" "You're now connected to Wi-Fi network '$SSID' "
 				else
@@ -241,7 +243,7 @@ function ssid_hidden() {
 				fi
 			else
 				check_wifi_connected
-				notification "5" "critical" "Wi-Fi" "Connecting to $SSID"
+				notification "5" "normal" "Wi-Fi" "Connecting to $SSID"
 				if [ $(nmcli dev wifi con "$SSID" password "$PASS" ifname ${WIRELESS_INTERFACES[WLAN_INT]}| grep -c "successfully activated" ) == "1" ]; then
 					notification "5" "normal" "Connection_Established" "You're now connected to Wi-Fi network '$SSID' "
 				else
@@ -250,7 +252,7 @@ function ssid_hidden() {
 			fi
 		else
 			check_wifi_connected
-			notification "5" "critical" "Wi-Fi" "Connecting to $1"
+			notification "5" "normal" "Wi-Fi" "Connecting to $1"
 			if [ $(nmcli dev wifi con "'$SSID'" ifname ${WIRELESS_INTERFACES[WLAN_INT]} hidden yes| grep -c "successfully activated" ) = "1" ]; then
 				notification "5" "normal" "Connection_Established" "You're now connected to Wi-Fi network '$1' "
 			else
@@ -335,7 +337,7 @@ function manual_hidden() {
 function selection_action () {
 	case "$SELECTION" in
 		"~Disconnect")
-			disconnect "5" "low" "Connection_Terminated"
+			disconnect "5" "normal" "Connection_Terminated"
 			;;
 		"~Scan")
 			scan
@@ -356,16 +358,16 @@ function selection_action () {
 			ssid_hidden
 				;;
 		"~Wi-Fi On")
-			change_wifi_state "4" "low" "Wi-Fi" "Enabling Wi-Fi connection" "on"
+			change_wifi_state "5" "normal" "Wi-Fi" "Enabling Wi-Fi connection" "on"
 			;;
 		"~Wi-Fi Off")
-			change_wifi_state "4" "low" "Wi-Fi" "Disabling Wi-Fi connection" "off"
+			change_wifi_state "5" "normal" "Wi-Fi" "Disabling Wi-Fi connection" "off"
 			;;
 		"~Eth Off")
-			change_wire_state "6" "low" "Ethernet" "Disabling Wired connection" "down"
+			change_wire_state "5" "normal" "Ethernet" "Disabling Wired connection" "down"
 			;;
 		"~Eth On")
-			change_wire_state "6" "low" "Ethernet" "Enabling Wired connection" "up"
+			change_wire_state "5" "normal" "Ethernet" "Enabling Wired connection" "up"
 			;;
 		"   ***Wi-Fi Disabled***   ")
 			;;
@@ -375,7 +377,7 @@ function selection_action () {
 			change_wireless_interface
 			;;
 		"~Restart Network")
-			net_restart "7" "critical" "Network" "Restarting Network"
+			net_restart "5" "normal" "Network" "Restarting Network"
 			;;
 		"~QrCode")
 			gen_qrcode
