@@ -141,7 +141,7 @@ function change_wifi_state() {
 }
 function change_wire_state() {
 	notification $1 $2 $3 "$4"
-	nmcli con $5 Ethernet
+	nmcli con $5 $(nmcli con | grep ethernet | awk '{print $1}')
 }
 function net_restart() {
 	notification $1 $2 $3 "$4"
