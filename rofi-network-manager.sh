@@ -129,7 +129,8 @@ function scan() {
 		change_wifi_state "5" "normal" "Wi-Fi" "Enabling Wi-Fi connection" "on"
 		sleep 2
 	fi
-	notification "5" "normal" "=t 0 Wifi" "Please Wait Scanning"
+	
+	notification "5" "normal" "-t 0 Wifi" "Please Wait Scanning"
 	WIFI_LIST=$(nmcli --fields IN-USE,SSID,SECURITY,BARS device wifi list ifname ${WIRELESS_INTERFACES[WLAN_INT]} --rescan yes | sed "s/^IN-USE\s//g" | sed "/*/d" | sed "s/^ *//")
 	wireless_interface_state
 	notification "5" "normal" "-t 1 Wifi" "Please Wait Scanning"
