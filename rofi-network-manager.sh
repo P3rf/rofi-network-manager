@@ -36,10 +36,9 @@ function notification() {
 		dunstify -r $1 -u $2 $3 "$4"
 	fi
 }
-
 function wireless_interface_state() {
-	ACTIVE_SSID=$(nmcli device status | grep ${WIRELESS_INTERFACES[WLAN_INT]} |  awk '{print $4}')
-	WIFI_CON_STATE=$(nmcli device status | grep ${WIRELESS_INTERFACES[WLAN_INT]} |  awk '{print $3}')
+	ACTIVE_SSID=$(nmcli device status | grep "^${WIRELESS_INTERFACES[WLAN_INT]}." |  awk '{print $4}')
+	WIFI_CON_STATE=$(nmcli device status | grep "^${WIRELESS_INTERFACES[WLAN_INT]}." |  awk '{print $3}')
 	if [[ "$WIFI_CON_STATE" =~ "unavailable" ]]; then
 		WIFI_LIST="   ***Wi-Fi Disabled***   "
 		WIFI_SWITCH="~Wi-Fi On"
@@ -48,8 +47,8 @@ function wireless_interface_state() {
 		WIFI_LIST=$(nmcli --fields IN-USE,SSID,SECURITY,BARS device wifi list ifname ${WIRELESS_INTERFACES[WLAN_INT]} | sed "s/^IN-USE\s//g" | sed "/*/d" | sed "s/^ *//")
 		LINES=$(echo "$WIFI_LIST" | wc -l)
 		if [[ "$ACTIVE_SSID" == "--" ]]; then
-			WIFI_SWITCH="~Wi-Fi Off"
-			((LINES+=5))
+			WIFI_SWITCH="~Manual/Hidden\n~Wi-Fi Off"
+			((LINES+=6))
 		else
 			WIFI_SWITCH="~Disconnect\n~Manual/Hidden\n~Share Wifi Password\n~Wi-Fi Off"
 			((LINES+=8))
@@ -69,6 +68,10 @@ function ethernet_interface_state() {
 }
 function rofi_menu() {
 	((WIDTH+=$WIDTH_FIX))
+	if [[ $LINES -eq  0 ]]; then
+	notification "5" "normal" "Initialization" "Some connections are being initializing.Please try again in a moment."
+	exit
+	fi
 	PROMPT=${WIRELESS_INTERFACES_PRODUCT[WLAN_INT]}[${WIRELESS_INTERFACES[WLAN_INT]}]
 	if [[ $(nmcli device | awk '$2=="wifi" {print $1}' | wc -l) -ne "1" ]]; then
 		((LINES+=1))
@@ -142,7 +145,7 @@ function change_wifi_state() {
 }
 function change_wire_state() {
 	notification $1 $2 $3 "$4"
-	nmcli con $5 $(nmcli con | grep ethernet | awk '{print $1}')
+	nmcli con $5 "$(nmcli -t -f NAME,TYPE con | grep "ethernet" | cut -d":" -f1)"
 }
 function net_restart() {
 	notification $1 $2 $3 "$4"
@@ -156,7 +159,7 @@ function disconnect() {
 	nmcli con down id  "$TRUE_ACTIVE_SSID"
 }
 function check_wifi_connected() {
-	if [[ "$(nmcli device status | grep ${WIRELESS_INTERFACES[WLAN_INT]} | awk '{print $3}')" == "connected" ]]; then
+	if [[ "$(nmcli device status | grep "^${WIRELESS_INTERFACES[WLAN_INT]}." | awk '{print $3}')" == "connected" ]]; then
 		disconnect "5" "normal" "Connection_Terminated"
 	fi
 }
@@ -268,21 +271,32 @@ function status() {
 	PROMPT="Status"
 	for i in "${!WIRELESS_INTERFACES[@]}"
 	do
-		WLAN_STATUS=(${WLAN_STATUS[@]}"${WIRELESS_INTERFACES_PRODUCT[$i]}[${WIRELESS_INTERFACES[$i]}]:\n\t$(nmcli -t -f GENERAL.CONNECTION dev show ${WIRELESS_INTERFACES[$i]} | awk -F '[:]' '{print $2}') ~ $(nmcli -t -f IP4.ADDRESS dev show ${WIRELESS_INTERFACES[$i]} | awk -F '[:/]' '{print $2}')\n")
-		((LINES+=2))
-		WIDTH_TEMP=$(echo $(nmcli -t -f GENERAL.CONNECTION dev show ${WIRELESS_INTERFACES[$i]} | awk -F '[:]' '{print $2}') ~ $(nmcli -t -f IP4.ADDRESS dev show ${WIRELESS_INTERFACES[$i]} | awk -F '[:/]' '{print $2}') | awk '{print length}' )
-		if [[ $WIDTH_TEMP -gt $WIDTH ]];then
-			WIDTH=$WIDTH_TEMP
+		WIFI_CON_STATE=$(nmcli device status | grep "^${WIRELESS_INTERFACES[i]}." |  awk '{print $3}')
+		if [[ "$WIFI_CON_STATE" == "connected" ]]; then
+			WLAN_STATUS=(${WLAN_STATUS[@]}"${WIRELESS_INTERFACES_PRODUCT[$i]}[${WIRELESS_INTERFACES[$i]}]:\n\t$(nmcli -t -f GENERAL.CONNECTION dev show ${WIRELESS_INTERFACES[$i]} | awk -F '[:]' '{print $2}') ~ $(nmcli -t -f IP4.ADDRESS dev show ${WIRELESS_INTERFACES[$i]} | awk -F '[:/]' '{print $2}')\n")
+		else
+			WLAN_STATUS=(${WLAN_STATUS[@]}"${WIRELESS_INTERFACES_PRODUCT[$i]}[${WIRELESS_INTERFACES[$i]}]:\n\t$WIFI_CON_STATE\n")
 		fi
+		((LINES+=2))
 	done
-	ETH_STATUS=("$(nmcli device | awk '$2=="ethernet" {print $1}'):\n\t"$(nmcli -t -f GENERAL.CONNECTION dev show eth0 | awk -F '[:]' '{print $2}')" ~ "$(nmcli -t -f IP4.ADDRESS dev show eth0 | awk -F '[:/]' '{print $2}') )
-	WIDTH_TEMP=$(echo $(nmcli -t -f GENERAL.CONNECTION dev show eth0 | awk -F '[:]' '{print $2}')" ~ "$(nmcli -t -f IP4.ADDRESS dev show eth0 | awk -F '[:/]' '{print $2}') | awk '{print length}' )
+	WIDTH_TEMP=$(echo $WLAN_STATUS | awk '{print length($0); }' )
+	if [[ $WIDTH_TEMP -gt $WIDTH ]];then
+		WIDTH=$WIDTH_TEMP
+	fi
+	WIRE_CON_STATE=$(nmcli device status | grep "ethernet"  |  awk '{print $3}')
+	if [[ "$WIRE_CON_STATE" == "connected" ]]; then
+		ETH_STATUS="$(nmcli device | awk '$2=="ethernet" {print $1}'):\n\t"$(nmcli -t -f GENERAL.CONNECTION dev show "$(nmcli device | awk '$2=="ethernet" {print $1}')" | cut -d":" -f2)" ~ "$(nmcli -t -f IP4.ADDRESS dev show "$(nmcli device | awk '$2=="ethernet" {print $1}')" | awk -F '[:/]' '{print $2}')
+	else
+		ETH_STATUS="$(nmcli device | awk '$2=="ethernet" {print $1}'):\n\t"$(nmcli -t -f GENERAL.CONNECTION dev show "$(nmcli device | awk '$2=="ethernet" {print $1}')" | cut -d":" -f2)"$WIRE_CON_STATE"
+	fi
+	WIDTH_TEMP=$(echo $ETH_STATUS | awk '{print length($0); }' )
 	if [[ $WIDTH_TEMP -gt $WIDTH ]];then
 		WIDTH=$WIDTH_TEMP
 	fi
 	if [[ $WIDTH -le 20 ]];then
 		WIDTH=30
 	fi
+	((WIDTH+=4))
 	echo -e "$ETH_STATUS\n${WLAN_STATUS[@]}"| \
 	rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
 	-theme "$RASI_DIR" -theme-str '
