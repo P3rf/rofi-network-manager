@@ -44,7 +44,7 @@ function wireless_interface_state() {
 		WIFI_SWITCH="~Wi-Fi On"
 		LINES=6
 	elif [[ "$WIFI_CON_STATE" =~ "connected" ]]; then
-		WIFI_LIST=$(nmcli --fields IN-USE,SSID,SECURITY,BARS device wifi list ifname ${WIRELESS_INTERFACES[WLAN_INT]} | sed "s/^IN-USE\s//g" | sed "/*/d" | sed "s/^ *//")
+		WIFI_LIST=$(nmcli --fields IN-USE,SSID,SECURITY,BARS device wifi list ifname ${WIRELESS_INTERFACES[WLAN_INT]} | sed "s/^IN-USE\s//g" | sed "/--/d" | sed "/*/d" | sed "s/^ *//")
 		LINES=$(echo "$WIFI_LIST" | wc -l)
 		if [[ "$ACTIVE_SSID" == "--" ]]; then
 			WIFI_SWITCH="~Manual/Hidden\n~Wi-Fi Off"
@@ -134,7 +134,7 @@ function scan() {
 	fi
 	
 	notification "5" "normal" "-t 0 Wifi" "Please Wait Scanning"
-	WIFI_LIST=$(nmcli --fields IN-USE,SSID,SECURITY,BARS device wifi list ifname ${WIRELESS_INTERFACES[WLAN_INT]} --rescan yes | sed "s/^IN-USE\s//g" | sed "/*/d" | sed "s/^ *//")
+	WIFI_LIST=$(nmcli --fields IN-USE,SSID,SECURITY,BARS device wifi list ifname ${WIRELESS_INTERFACES[WLAN_INT]} --rescan yes | sed "s/^IN-USE\s//g" | sed "/--/d" | sed "/*/d" | sed "s/^ *//")
 	wireless_interface_state
 	notification "5" "normal" "-t 1 Wifi" "Please Wait Scanning"
 	rofi_menu
@@ -275,7 +275,7 @@ function status() {
 		if [[ "$WIFI_CON_STATE" == "connected" ]]; then
 			WLAN_STATUS=(${WLAN_STATUS[@]}"${WIRELESS_INTERFACES_PRODUCT[$i]}[${WIRELESS_INTERFACES[$i]}]:\n\t$(nmcli -t -f GENERAL.CONNECTION dev show ${WIRELESS_INTERFACES[$i]} | awk -F '[:]' '{print $2}') ~ $(nmcli -t -f IP4.ADDRESS dev show ${WIRELESS_INTERFACES[$i]} | awk -F '[:/]' '{print $2}')\n")
 		else
-			WLAN_STATUS=(${WLAN_STATUS[@]}"${WIRELESS_INTERFACES_PRODUCT[$i]}[${WIRELESS_INTERFACES[$i]}]:\n\t$WIFI_CON_STATE\n")
+			WLAN_STATUS=(${WLAN_STATUS[@]}"${WIRELESS_INTERFACES_PRODUCT[$i]}[${WIRELESS_INTERFACES[$i]}]:\n\t${WIFI_CON_STATE^}\n")
 		fi
 		((LINES+=2))
 	done
@@ -287,7 +287,7 @@ function status() {
 	if [[ "$WIRE_CON_STATE" == "connected" ]]; then
 		ETH_STATUS="$(nmcli device | awk '$2=="ethernet" {print $1}'):\n\t"$(nmcli -t -f GENERAL.CONNECTION dev show "$(nmcli device | awk '$2=="ethernet" {print $1}')" | cut -d":" -f2)" ~ "$(nmcli -t -f IP4.ADDRESS dev show "$(nmcli device | awk '$2=="ethernet" {print $1}')" | awk -F '[:/]' '{print $2}')
 	else
-		ETH_STATUS="$(nmcli device | awk '$2=="ethernet" {print $1}'):\n\t"$(nmcli -t -f GENERAL.CONNECTION dev show "$(nmcli device | awk '$2=="ethernet" {print $1}')" | cut -d":" -f2)"$WIRE_CON_STATE"
+		ETH_STATUS="$(nmcli device | awk '$2=="ethernet" {print $1}'):\n\t"$(nmcli -t -f GENERAL.CONNECTION dev show "$(nmcli device | awk '$2=="ethernet" {print $1}')" | cut -d":" -f2)"${WIRE_CON_STATE^}"
 	fi
 	WIDTH_TEMP=$(echo $ETH_STATUS | awk '{print length($0); }' )
 	if [[ $WIDTH_TEMP -gt $WIDTH ]];then
@@ -325,15 +325,25 @@ function gen_qrcode() {
 	-theme "$RASI_DIR" -theme-str '* {
 	background-color: transparent;
 	text-color:       transparent;
-  	}
+	}
   	window {
-	  padding: 1em;
-	  background-color: transparent;
-	  background-image: url("'$QRCODE_DIR'wifi_qr.png",width);
-	  width: 20em;
- 	}
-  	listview{lines: 15;}
-  	entry {enabled: false;}'
+		border-radius: 6px;
+		padding: 1em;
+		background-color: transparent;
+		background-image: url("'$QRCODE_DIR'wifi_qr.png",width);
+		width: 20em;
+	}
+	textbox-prompt-colon {
+		expand: false;
+		margin: 0;
+		str:"";
+	}
+  	listview {
+		lines: 15;
+	}
+  	entry {
+		enabled: false;
+	}'
 }
 function manual_hidden() {
 	LINES=2
