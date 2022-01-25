@@ -6,7 +6,8 @@ Y_AXIS=0
 X_AXIS=0
 NOTIFICATIONS_INIT="off"
 QRCODE_DIR="/tmp/"
-WIDTH_FIX=0
+WIDTH_FIX_MAIN=0
+WIDTH_FIX_STATUS=0
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PASSWORD_ENTER="if connection is stored, hit enter/esc"
 WIRELESS_INTERFACES=($(nmcli device | awk '$2=="wifi" {print $1}'))
@@ -40,7 +41,7 @@ function wireless_interface_state() {
 	ACTIVE_SSID=$(nmcli device status | grep "^${WIRELESS_INTERFACES[WLAN_INT]}." |  awk '{print $4}')
 	WIFI_CON_STATE=$(nmcli device status | grep "^${WIRELESS_INTERFACES[WLAN_INT]}." |  awk '{print $3}')
 	if [[ "$WIFI_CON_STATE" =~ "unavailable" ]]; then
-		WIFI_LIST="   ***Wi-Fi Disabled***   "
+		WIFI_LIST="   ***Wi-Fi Disabled***"
 		WIFI_SWITCH="~Wi-Fi On"
 		LINES=6
 	elif [[ "$WIFI_CON_STATE" =~ "connected" ]]; then
@@ -67,7 +68,7 @@ function ethernet_interface_state() {
 	fi
 }
 function rofi_menu() {
-	((WIDTH+=$WIDTH_FIX))
+	((WIDTH+=$WIDTH_FIX_MAIN))
 	if [[ $LINES -eq  0 ]]; then
 	notification "5" "normal" "Initialization" "Some connections are being initializing.Please try again in a moment."
 	exit
@@ -184,7 +185,7 @@ function stored_connection() {
 function ssid_manual() {
 	LINES=0
 	PROMPT="Enter_SSID"
-	WIDTH=30
+	WIDTH=35
 	SSID=$(	rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
 	-theme "$RASI_DIR" -theme-str '
 	window{width: '"$(($WIDTH/2))"'em;}
@@ -195,6 +196,7 @@ function ssid_manual() {
 	if [[ ! -z $SSID ]]; then
 		LINES=1
 		WIDTH=$(echo "$PASSWORD_ENTER" | awk '{print length($0); }')
+		((WIDTH+=$WIDTH_FIX_MAIN))
 		PROMPT="Enter_Password"
 		PASS=$(echo "$PASSWORD_ENTER" | \
 		rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
@@ -217,7 +219,7 @@ function ssid_manual() {
 function ssid_hidden() {
 	LINES=0
 	PROMPT="Enter_SSID"
-	WIDTH=30
+	WIDTH=35
 	SSID=$(	rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
 	-theme "$RASI_DIR" -theme-str '
 	window{width: '"$(($WIDTH/2))"'em;}
@@ -228,6 +230,7 @@ function ssid_hidden() {
 	if [[ ! -z $SSID ]]; then
 		LINES=1
 		WIDTH=$(echo "$PASSWORD_ENTER" | awk '{print length($0); }')
+		((WIDTH+=$WIDTH_FIX_MAIN))
 		PROMPT="Enter_Password"
 		PASS=$(echo "$PASSWORD_ENTER" | \
 		rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
@@ -279,7 +282,7 @@ function status() {
 		fi
 		((LINES+=2))
 	done
-	WIDTH_TEMP=$(echo $WLAN_STATUS | awk '{print length($0); }' )
+	WIDTH_TEMP=$(echo -e $WLAN_STATUS | tail -n 2 | head -n 1 | awk '{print length($0); }' )
 	if [[ $WIDTH_TEMP -gt $WIDTH ]];then
 		WIDTH=$WIDTH_TEMP
 	fi
@@ -289,14 +292,14 @@ function status() {
 	else
 		ETH_STATUS="$(nmcli device | awk '$2=="ethernet" {print $1}'):\n\t"$(nmcli -t -f GENERAL.CONNECTION dev show "$(nmcli device | awk '$2=="ethernet" {print $1}')" | cut -d":" -f2)"${WIRE_CON_STATE^}"
 	fi
-	WIDTH_TEMP=$(echo $ETH_STATUS | awk '{print length($0); }' )
+	WIDTH_TEMP=$(echo -e $ETH_STATUS | tail -n 1 | awk '{print length($0); }' )
 	if [[ $WIDTH_TEMP -gt $WIDTH ]];then
 		WIDTH=$WIDTH_TEMP
 	fi
+	((WIDTH+=WIDTH_FIX_STATUS))
 	if [[ $WIDTH -le 20 ]];then
-		WIDTH=30
+		WIDTH=35
 	fi
-	((WIDTH+=4))
 	echo -e "$ETH_STATUS\n${WLAN_STATUS[@]}"| \
 	rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
 	-theme "$RASI_DIR" -theme-str '
@@ -309,7 +312,7 @@ function share_pass() {
 	LINES=$(nmcli dev wifi show-password | grep -e SSID:  -e Password: | wc -l)
 	((LINES+=1))
 	PROMPT=">_"
-	WIDTH=30
+	WIDTH=35
 	SELECTION=$(echo -e "$(nmcli dev wifi show-password | grep -e SSID:  -e Password:)\n~QrCode" | \
 	rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
 	-a "2" -theme "$RASI_DIR" -theme-str '
@@ -322,7 +325,7 @@ function share_pass() {
 function gen_qrcode() {
 	qrencode -t png -o /tmp/wifi_qr.png -s 10 -m 2 "WIFI:S:"$( nmcli dev wifi show-password | grep -oP '(?<=SSID: ).*' | head -1)";T:"$(nmcli dev wifi show-password | grep -oP '(?<=Security: ).*' | head -1)";P:"$(nmcli dev wifi show-password | grep -oP '(?<=Password: ).*' | head -1)";;"
 	rofi -dmenu -location "$QRCODE_LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
-	-theme "$RASI_DIR" -theme-str '* {
+	-theme-str '* {
 	background-color: transparent;
 	text-color:       transparent;
 	}
@@ -347,8 +350,8 @@ function gen_qrcode() {
 }
 function manual_hidden() {
 	LINES=2
-	WIDTH=16
-	PROMPT=""
+	WIDTH=35
+	PROMPT=">_"
 	SELECTION=$(echo -e "~Manual\n~Hidden" |\
 	rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
 	-theme "$RASI_DIR" -theme-str '
@@ -410,6 +413,7 @@ function selection_action () {
 		*)
 			LINES=1
 			WIDTH=$(echo "$PASSWORD_ENTER" | awk '{print length($0); }')
+			((WIDTH+=$WIDTH_FIX_MAIN))
 			PROMPT="Enter_Password"
 			if [[ ! -z "$SELECTION" ]] && [[ "$WIFI_LIST" =~ .*"$SELECTION".*  ]]; then
 				if [ "$SSID_SELECTION" = "*" ]; then
