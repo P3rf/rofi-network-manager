@@ -11,11 +11,12 @@ configuration {
 	foreground-selection:@foreground; 	//Selection_fg
 	background-selection:#e34039; 		//Selection_bg
 
-	background-color:				@background;
+	transparent:					#ffffff00;
+	background-color:				@transparent;
 	text-color:						@foreground;
 	selected-normal-foreground:		@foreground-selection;
-	normal-foreground:        		@foreground;
-	alternate-normal-background: 	@background;
+	normal-foreground:       		@foreground;
+	alternate-normal-background:	@transparent;
 	selected-urgent-foreground:  	@foreground;
 	urgent-foreground:           	@foreground;
 	alternate-urgent-background: 	@background;
@@ -24,15 +25,15 @@ configuration {
 	alternate-normal-foreground: 	@foreground;
 	alternate-active-background: 	@background;
 	bordercolor:                 	@background;
-	normal-background:           	@background;
+	normal-background:           	@transparent;
 	selected-normal-background:  	@background-selection;
 	separatorcolor:              	@accent;
 	urgent-background:           	@accent;
 	alternate-urgent-foreground: 	@foreground;
 	selected-urgent-background:  	@accent;
 	alternate-active-foreground: 	@foreground;
-	selected-active-background:  	@background;
-	active-background:           	@background;
+	selected-active-background:  	@transparent;
+	active-background:           	@transparent;
 }
 window {
 	text-color:			@foreground;
@@ -112,7 +113,7 @@ button normal {
 }
 inputbar {
 	children: [textbox-prompt-colon,entry];
-}                           
+}
 textbox-prompt-colon{
 	expand:	false;
 	margin: 0;

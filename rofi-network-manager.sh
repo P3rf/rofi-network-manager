@@ -21,7 +21,7 @@ function initialization() {
 		source "$HOME/.config/rofi/rofi-network-manager.conf"
 	fi
 	if [[ -f "$DIR/rofi-network-manager.rasi" ]]; then
-		RASI_DIR="$DIR/rofi-network-manager.rasi" 
+		RASI_DIR="$DIR/rofi-network-manager.rasi"
 	elif [[ -f "$HOME/.config/rofi/rofi-network-manager.rasi" ]]; then
 		RASI_DIR="$HOME/.config/rofi/rofi-network-manager.rasi"
 	fi
@@ -46,7 +46,7 @@ function wireless_interface_state() {
 		LINES=6
 	elif [[ "$WIFI_CON_STATE" =~ "connected" ]]; then
 		WIFI_LIST=$(nmcli --fields IN-USE,SSID,SECURITY,BARS device wifi list ifname ${WIRELESS_INTERFACES[WLAN_INT]} | sed "s/^IN-USE\s//g" | sed "/--/d" | sed "/*/d" | sed "s/^ *//")
-		LINES=$(echo "$WIFI_LIST" | wc -l)
+		LINES=$(echo -e "$WIFI_LIST" | wc -l)
 		if [[ "$ACTIVE_SSID" == "--" ]]; then
 			WIFI_SWITCH="~Manual/Hidden\n~Wi-Fi Off"
 			((LINES+=6))
@@ -67,7 +67,7 @@ function ethernet_interface_state() {
 		WIRE_SWITCH=" ***Wired Unavailable***"
 	fi
 }
-function rofi_menu() {
+function rofi_menu() {	
 	((WIDTH+=$WIDTH_FIX_MAIN))
 	if [[ $LINES -eq  0 ]]; then
 	notification "5" "normal" "Initialization" "Some connections are being initializing.Please try again in a moment."
@@ -91,7 +91,6 @@ function rofi_menu() {
 		listview{lines: '"$LINES"';}
 		textbox-prompt-colon{str:"'$PROMPT':";}
 		')
-
 	fi
 	SSID_SELECTION=$(echo "$SELECTION" | sed  "s/\s\{2,\}/\|/g" | awk -F "|" '{print $1}')
 	selection_action
@@ -133,7 +132,6 @@ function scan() {
 		change_wifi_state "5" "normal" "Wi-Fi" "Enabling Wi-Fi connection" "on"
 		sleep 2
 	fi
-	
 	notification "5" "normal" "-t 0 Wifi" "Please Wait Scanning"
 	WIFI_LIST=$(nmcli --fields IN-USE,SSID,SECURITY,BARS device wifi list ifname ${WIRELESS_INTERFACES[WLAN_INT]} --rescan yes | sed "s/^IN-USE\s//g" | sed "/--/d" | sed "/*/d" | sed "s/^ *//")
 	wireless_interface_state
@@ -271,7 +269,6 @@ function ssid_hidden() {
 function status() {
 	LINES=2
 	WIDTH=0
-	PROMPT="Status"
 	for i in "${!WIRELESS_INTERFACES[@]}"
 	do
 		WIFI_CON_STATE=$(nmcli device status | grep "^${WIRELESS_INTERFACES[i]}." |  awk '{print $3}')
@@ -303,22 +300,21 @@ function status() {
 	echo -e "$ETH_STATUS\n${WLAN_STATUS[@]}"| \
 	rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
 	-theme "$RASI_DIR" -theme-str '
-		window{width: '"$(($WIDTH/2))"'em;}
+		window{width: '"$(($WIDTH/2))"'em;
+		children: [listview];}
 		listview{lines: '"$LINES"';}
-		textbox-prompt-colon{str:"'$PROMPT':";}
 	'
 }
 function share_pass() {
 	LINES=$(nmcli dev wifi show-password | grep -e SSID:  -e Password: | wc -l)
 	((LINES+=1))
-	PROMPT=">_"
 	WIDTH=35
 	SELECTION=$(echo -e "$(nmcli dev wifi show-password | grep -e SSID:  -e Password:)\n~QrCode" | \
 	rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
 	-a "2" -theme "$RASI_DIR" -theme-str '
-		window{width: '"$(($WIDTH/2))"'em;}
+		window{width: '"$(($WIDTH/2))"'em;
+		children: [listview];}
 		listview{lines: '"$LINES"';}
-		textbox-prompt-colon{str:"'$PROMPT':";}
 	')
 	selection_action
 }
@@ -351,13 +347,12 @@ function gen_qrcode() {
 function manual_hidden() {
 	LINES=2
 	WIDTH=35
-	PROMPT=">_"
 	SELECTION=$(echo -e "~Manual\n~Hidden" |\
 	rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
 	-theme "$RASI_DIR" -theme-str '
-	window{width: '"$(($WIDTH/2))"'em;}
+	window{width: '"$(($WIDTH/2))"'em;
+	children: [listview];}
 	listview{lines: '"$LINES"';}
-	textbox-prompt-colon{str:"'$PROMPT':";}
 	')
 	selection_action
 	echo $SELECTION
