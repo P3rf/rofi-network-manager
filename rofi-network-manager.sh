@@ -17,13 +17,13 @@ WLAN_INT=0
 function initialization() {
 	if [[ -f "$DIR/rofi-network-manager.conf" ]]; then
 		source "$DIR/rofi-network-manager.conf"
-	elif [[ -f "$HOME/.config/rofi/rofi-network-manager.conf" ]]; then
-		source "$HOME/.config/rofi/rofi-network-manager.conf"
+	elif [[ -f "${XDG_CONFIG_HOME:-$HOME/.config}/rofi/rofi-network-manager.conf" ]]; then
+		source "${XDG_CONFIG_HOME:-$HOME/.config}/rofi/rofi-network-manager.conf"
 	fi
 	if [[ -f "$DIR/rofi-network-manager.rasi" ]]; then
 		RASI_DIR="$DIR/rofi-network-manager.rasi"
-	elif [[ -f "$HOME/.config/rofi/rofi-network-manager.rasi" ]]; then
-		RASI_DIR="$HOME/.config/rofi/rofi-network-manager.rasi"
+	elif [[ -f "${XDG_CONFIG_HOME:-$HOME/.config}/rofi/rofi-network-manager.rasi" ]]; then
+		RASI_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/rofi/rofi-network-manager.rasi"
 	fi
 	for i in "${WIRELESS_INTERFACES[@]}"
 	do
