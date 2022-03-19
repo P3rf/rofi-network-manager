@@ -319,7 +319,7 @@ function share_pass() {
 	selection_action
 }
 function gen_qrcode() {
-	qrencode -t png -o /tmp/wifi_qr.png -s 10 -m 2 "WIFI:S:"$( nmcli dev wifi show-password | grep -oP '(?<=SSID: ).*' | head -1)";T:"$(nmcli dev wifi show-password | grep -oP '(?<=Security: ).*' | head -1)";P:"$(nmcli dev wifi show-password | grep -oP '(?<=Password: ).*' | head -1)";;"
+	qrencode -t png -o /tmp/wifi_qr.png -s 10 -m 2 "WIFI:S:""$( nmcli dev wifi show-password | grep -oP '(?<=SSID: ).*' | head -1)"";T:""$(nmcli dev wifi show-password | grep -oP '(?<=Security: ).*' | head -1)"";P:""$(nmcli dev wifi show-password | grep -oP '(?<=Password: ).*' | head -1)"";;"
 	rofi -dmenu -location "$QRCODE_LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
 	-theme-str '* {
 	background-color: transparent;

@@ -64,7 +64,7 @@ NOTIFICATIONS_INIT="off"
 #Location of qrcode wifi image
 QRCODE_DIR="/tmp/"
 # WIDTH_FIX_MAIN and WIDTH_FIX_STATUS needs to be increased by a little if the text
-# doesn't fit when you launch rofi-network-manager. 
+# doesn't fit when you launch rofi-network-manager.
 #It depends on the font type and size.
 WIDTH_FIX_MAIN=8
 WIDTH_FIX_STATUS=14
@@ -73,13 +73,13 @@ WIDTH_FIX_STATUS=14
 __rofi-network-manager.rasi__
 
 ````
-font: "DejaVu Sans Mono 9";		//Font
+font: "DejaVu Sans Mono 9";		    //Font
 //Colors
-foreground:#f8f8f2; 			//Text
-background:#0A1229; 			//Background
-accent:#00BCD4; 			//Hightlight
-foreground-selection:@foreground; 	//Selection_fg
-background-selection:#e34039; 		//Selection_bg
+foreground:#f8f8f2; 		    	//Text
+background:#0A1229; 			    //Background
+accent:#00BCD4; 			        //Hightlight
+foreground-selection:@foreground;	//Selection_fg
+background-selection:#e34039;		//Selection_bg
 ````
 
 ### Download-Usage
