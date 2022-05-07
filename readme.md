@@ -73,13 +73,13 @@ WIDTH_FIX_STATUS=14
 __rofi-network-manager.rasi__
 
 ````
-font: "DejaVu Sans Mono 9";		    //Font
+font: "DejaVu Sans Mono 9";       //Font
 //Colors
-foreground:#f8f8f2; 		    	//Text
-background:#0A1229; 			    //Background
-accent:#00BCD4; 			        //Hightlight
-foreground-selection:@foreground;	//Selection_fg
-background-selection:#e34039;		//Selection_bg
+foreground:#f8f8f2;               //Text
+background:#0A1229;               //Background
+accent:#00BCD4;                   //Hightlight
+foreground-selection:@foreground; //Selection_fg
+background-selection:#e34039;     //Selection_bg
 ````
 
 ### Download-Usage

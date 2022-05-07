@@ -43,16 +43,16 @@ function wireless_interface_state() {
 	if [[ "$WIFI_CON_STATE" =~ "unavailable" ]]; then
 		WIFI_LIST="   ***Wi-Fi Disabled***"
 		WIFI_SWITCH="~Wi-Fi On"
-		LINES=6
+		LINES=5
 	elif [[ "$WIFI_CON_STATE" =~ "connected" ]]; then
-		WIFI_LIST=$(nmcli --fields IN-USE,SSID,SECURITY,BARS device wifi list ifname ${WIRELESS_INTERFACES[WLAN_INT]} | sed "s/^IN-USE\s//g" | sed "/--/d" | sed "/*/d" | sed "s/^ *//")
+		WIFI_LIST=$(nmcli --fields IN-USE,SSID,SECURITY,BARS device wifi list ifname ${WIRELESS_INTERFACES[WLAN_INT]} | sed "s/^IN-USE\s//g" | sed "/--/d" | sed "/*/d" | sed "s/^ *//" )
 		LINES=$(echo -e "$WIFI_LIST" | wc -l)
 		if [[ "$ACTIVE_SSID" == "--" ]]; then
 			WIFI_SWITCH="~Manual/Hidden\n~Wi-Fi Off"
-			((LINES+=6))
+			((LINES+=5))
 		else
-			WIFI_SWITCH="~Disconnect\n~Manual/Hidden\n~Share Wifi Password\n~Wi-Fi Off"
-			((LINES+=8))
+			WIFI_SWITCH="~Disconnect\n~Manual/Hidden\n~Wi-Fi Off"
+			((LINES+=6))
 		fi
 	fi
 	WIDTH=$(echo "$WIFI_LIST" | head -n 1 | awk '{print length($0); }')
@@ -76,7 +76,7 @@ function rofi_menu() {
 	PROMPT=${WIRELESS_INTERFACES_PRODUCT[WLAN_INT]}[${WIRELESS_INTERFACES[WLAN_INT]}]
 	if [[ $(nmcli device | awk '$2=="wifi" {print $1}' | wc -l) -ne "1" ]]; then
 		((LINES+=1))
-		SELECTION=$(echo -e "$WIFI_LIST\n~Scan\n$WIFI_SWITCH\n$WIRE_SWITCH\n~Change Wifi Interface\n~Status\n~Restart Network" | uniq -u | \
+		SELECTION=$(echo -e "$WIFI_LIST\n~Scan\n$WIFI_SWITCH\n$WIRE_SWITCH\n~Change Wifi Interface\n~More Options" | \
 		rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
 		-a "0" -theme "$RASI_DIR" -theme-str '
 		window{width: '"$(($WIDTH/2))"'em;}
@@ -84,7 +84,7 @@ function rofi_menu() {
 		textbox-prompt-colon{str:"'$PROMPT':";}
 		')
 	else
-		SELECTION=$(echo -e "$WIFI_LIST\n~Scan\n$WIFI_SWITCH\n$WIRE_SWITCH\n~Status\n~Restart Network" | uniq -u | \
+		SELECTION=$(echo -e "$WIFI_LIST\n~Scan\n$WIFI_SWITCH\n$WIRE_SWITCH\n~More Options" | \
 		rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
 		-a "0" -theme "$RASI_DIR" -theme-str '
 		window{width: '"$(($WIDTH/2))"'em;}
@@ -357,7 +357,24 @@ function manual_hidden() {
 	selection_action
 	echo $SELECTION
 }
-function selection_action () {
+function more_options() {
+	LINES=4
+	WIDTH=35
+	if [[ "$WIFI_CON_STATE" =~ "connected" ]]; then
+		OPTIONS="~Share Wifi Password"
+	fi
+	OPTIONS="${OPTIONS}\n~Status\n~Restart Network\n~Open Connection Editor"
+
+	SELECTION=$(echo -e "$OPTIONS"| \
+	rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
+	-theme "$RASI_DIR" -theme-str '
+		window{width: '"$(($WIDTH/2))"'em;
+		children: [listview];}
+		listview{lines: '"$LINES"';}
+	')
+	selection_action
+}
+function selection_action() {
 	case "$SELECTION" in
 		"~Disconnect")
 			disconnect "5" "normal" "Connection_Terminated"
@@ -404,6 +421,12 @@ function selection_action () {
 			;;
 		"~QrCode")
 			gen_qrcode
+			;;
+		"~More Options")
+			more_options
+			;;
+		"~Open Connection Editor")
+			nm-connection-editor 
 			;;
 		*)
 			LINES=1
