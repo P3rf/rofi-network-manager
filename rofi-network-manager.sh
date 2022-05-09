@@ -44,7 +44,7 @@ function wireless_interface_state() {
 		WIFI_LIST="   ***Wi-Fi Disabled***"
 		WIFI_SWITCH="~Wi-Fi On"
 		LINES=5
-	elif [[ "$WIFI_CON_STATE" == "connected" ]]; then
+	elif [[ "$WIFI_CON_STATE" =~ "connected" ]]; then
 		WIFI_LIST=$(nmcli --fields IN-USE,SSID,SECURITY,BARS device wifi list ifname ${WIRELESS_INTERFACES[WLAN_INT]} | sed "s/^IN-USE\s//g" | sed "/--/d" | sed "/*/d" | sed "s/^ *//" )
 		LINES=$(echo -e "$WIFI_LIST" | wc -l)
 		if [[ "$ACTIVE_SSID" == "--" ]]; then
@@ -67,7 +67,7 @@ function ethernet_interface_state() {
 		WIRE_SWITCH=" ***Wired Unavailable***"
 	fi
 }
-function rofi_menu() {	
+function rofi_menu() {
 	((WIDTH+=$WIDTH_FIX_MAIN))
 	if [[ $LINES -eq  0 ]]; then
 	notification "5" "normal" "Initialization" "Some connections are being initializing.Please try again in a moment."
@@ -358,14 +358,17 @@ function manual_hidden() {
 	echo $SELECTION
 }
 function more_options() {
-	LINES=3
+	LINES=2
 	WIDTH=35
 	if [[ "$WIFI_CON_STATE" == "connected" ]]; then
 		OPTIONS="~Share Wifi Password\n"
 		((LINES+=1))
 	fi
-	OPTIONS="${OPTIONS}~Status\n~Restart Network\n~Open Connection Editor"
-
+	OPTIONS="${OPTIONS}~Status\n~Restart Network"
+	if [[ -x "$(command -v nm-connection-editor)" ]]; then
+		OPTIONS="${OPTIONS}\n~Open Connection Editor"
+		((LINES+=1))
+	fi
 	SELECTION=$(echo -e "$OPTIONS"| \
 	rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
 	-theme "$RASI_DIR" -theme-str '
@@ -427,7 +430,7 @@ function selection_action() {
 			more_options
 			;;
 		"~Open Connection Editor")
-			nm-connection-editor 
+			nm-connection-editor
 			;;
 		*)
 			LINES=1
