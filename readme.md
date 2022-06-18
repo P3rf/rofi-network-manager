@@ -1,39 +1,39 @@
 # Rofi-NetWork-manager
 
-A nework manager for Tiling Window Managers [i3/bspwm/awesome/etc] or not.
+A Network manager for Tiling Window Managers [i3/bspwm/awesome/etc] or not.
 Inspired from [rofi-wifi-menu](https://github.com/zbaylin/rofi-wifi-menu).
 
 ## Table of Contents
 
-* [Requirements](#requirements)
-* [Features](#features)
-* [Screenshots](#screenshots)
-* [Config](#config)
-* [Download-Usage](#download-usage)
-* [Examples-Usage](#examples-usage)
-* [ToDo](#todo)
+- [Requirements](#requirements)
+- [Features](#features)
+- [Screenshots](#screenshots)
+- [Config](#config)
+- [Download-Usage](#download-usage)
+- [Examples-Usage](#examples-usage)
+- [ToDo](#todo)
 
 ### Requirements
 
-* nmcli
-* [rofi](https://github.com/davatorium/rofi)
-* [dunst](https://github.com/dunst-project/dunst) (_Optional_) (_For notifications_)
-* [qrencode](https://fukuchi.org/works/qrencode) (_For sharing wifi with qrcode_)
+- nmcli
+- [rofi](https://github.com/davatorium/rofi)
+- [dunst](https://github.com/dunst-project/dunst) (_Optional_) (_For notifications_)
+- [qrencode](https://fukuchi.org/works/qrencode) (_For sharing wifi with qrcode_)
 
 ### Features
 
-* Connect to an existing network
-* Disconnect from the network
-* Turn on/off wifi
-* Support for Multiple wifi devices
-  * Option to change between wifi devices when available
-* Manual Connection to a Access Point or a hidden one
-* Turn on/off ethernet
-  * See when ethernet is unavailable
-* Restart the network
-* Status
-  * See devices Connection name and local IP
-* See Current wifi password and share it with a qrcode
+- Connect to an existing network
+- Disconnect from the network
+- Turn on/off wifi
+- Support for Multiple wifi devices
+  - Option to change between wifi devices when available
+- Manual Connection to a Access Point or a hidden one
+- Turn on/off ethernet
+  - See when ethernet is unavailable
+- Restart the network
+- Status
+  - See devices Connection name and local IP
+- See Current wifi password and share it with a qrcode
 
 ### Screenshots
 
@@ -42,9 +42,9 @@ Inspired from [rofi-wifi-menu](https://github.com/zbaylin/rofi-wifi-menu).
 
 ### Config
 
-__rofi-network-manager.conf__
+**rofi-network-manager.conf**
 
-````
+```
 # Location
 #This sets the anchor point:
 # +---------- +
@@ -63,24 +63,24 @@ X_AXIS=0
 NOTIFICATIONS_INIT="off"
 #Location of qrcode wifi image
 QRCODE_DIR="/tmp/"
-# WIDTH_FIX_MAIN and WIDTH_FIX_STATUS needs to be increased by a little if the text
-# doesn't fit when you launch rofi-network-manager.
+# WIDTH_FIX/WIDTH_FIX_STATUS needs to be increased or decreased , if the text
+# doesn't fit  or it has too much space at the end when you launch rofi-network-manager.
 #It depends on the font type and size.
-WIDTH_FIX_MAIN=8
-WIDTH_FIX_STATUS=14
-````
+WIDTH_FIX_MAIN=1
+WIDTH_FIX_STATUS=10
+```
 
-__rofi-network-manager.rasi__
+**rofi-network-manager.rasi**
 
-````
+```
 font: "DejaVu Sans Mono 9";       //Font
 //Colors
 foreground:#f8f8f2;               //Text
 background:#0A1229;               //Background
-accent:#00BCD4;                   //Hightlight
+accent:#00BCD4;                   //Highlight
 foreground-selection:@foreground; //Selection_fg
 background-selection:#e34039;     //Selection_bg
-````
+```
 
 ### Download-Usage
 
@@ -137,9 +137,9 @@ label-disconnected ="󰌺"
 
 ### ToDo
 
-* [X] Fix notifications
-* [ ] ~~Add notifications icons~~
-* [X] Support for multiple wifi devices
-* [ ] Add Hotspot support
-* [X] Share wifi password with qrcode inside rofi
-* [ ] Find a way to manage duplicate Access Points
+- [x] Fix notifications
+- [ ] ~~Add notifications icons~~
+- [x] Support for multiple wifi devices
+- [ ] Add Hotspot support
+- [x] Share wifi password with qrcode inside rofi
+- [ ] Find a way to manage duplicate Access Points
