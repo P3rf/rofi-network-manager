@@ -7,7 +7,7 @@ configuration {
 	//Colors
 	foreground:#f8f8f2; 				//Text
 	background:#0A1229; 				//Background
-	accent:#00BCD4; 					//Hightlight
+	accent:#00BCD4; 					//Highlight
 	foreground-selection:@foreground; 	//Selection_fg
 	background-selection:#e34039; 		//Selection_bg
 
