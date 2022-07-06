@@ -143,4 +143,4 @@ label-disconnected ="󰌺"
 - [x] Support for multiple wifi devices
 - [ ] Add Hotspot support
 - [x] Share wifi password with qrcode inside rofi
-- [ ] Find a way to manage duplicate Access Points
+- [x] Find a way to manage duplicate Access Points
