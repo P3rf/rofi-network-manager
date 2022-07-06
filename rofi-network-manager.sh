@@ -16,21 +16,15 @@ WLAN_INT=0
 
 function initialization() {
 	source "$DIR/rofi-network-manager.conf" || source "${XDG_CONFIG_HOME:-$HOME/.config}/rofi/rofi-network-manager.conf" || exit
-	if [[ -f "$DIR/rofi-network-manager.rasi" ]]; then
-		RASI_DIR="$DIR/rofi-network-manager.rasi"
-	elif [[ -f "${XDG_CONFIG_HOME:-$HOME/.config}/rofi/rofi-network-manager.rasi" ]]; then
-		RASI_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/rofi/rofi-network-manager.rasi"
-	else
-		exit
-	fi
+	RASI_DIR="$DIR/rofi-network-manager.rasi" && [[ -f "$DIR/rofi-network-manager.rasi" ]] || RASI_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/rofi/rofi-network-manager.rasi" && [[ -f "${XDG_CONFIG_HOME:-$HOME/.config}/rofi/rofi-network-manager.rasi" ]] || exit
 	for i in "${WIRELESS_INTERFACES[@]}"; do
-		WIRELESS_INTERFACES_PRODUCT+=($(nmcli -f general.product device show "$i" | awk '{print $2}'))
+		WIRELESS_INTERFACES_PRODUCT+=("$(nmcli -f general.product device show "$i" | awk '{print $2}')")
 	done
 	wireless_interface_state
 	ethernet_interface_state
 }
 function notification() {
-	[[ "$NOTIFICATIONS_INIT" == "on" ]] && dunstify -r $1 -u $2 $3 "$4"
+	[[ "$NOTIFICATIONS_INIT" == "on" ]] && dunstify -r "5" -u "normal" $1 "$2"
 }
 function wireless_interface_state() {
 	ACTIVE_SSID=$(nmcli device status | grep "^${WIRELESS_INTERFACES[WLAN_INT]}." | awk '{print $4}')
@@ -63,24 +57,24 @@ function ethernet_interface_state() {
 	fi
 }
 function rofi_menu() {
+	[[ $LINES -eq 0 ]] && notification "Initialization" "Some connections are being set up.Please try again later." && exit
 	((WIDTH += WIDTH_FIX_MAIN))
-	[[ $LINES -eq 0 ]] && notification "5" "normal" "Initialization" "Some connections are being set up.Please try again later. " && exit
 	PROMPT=${WIRELESS_INTERFACES_PRODUCT[WLAN_INT]}[${WIRELESS_INTERFACES[WLAN_INT]}]
 	if [[ $(nmcli device | awk '$2=="wifi" {print $1}' | wc -l) -ne "1" ]]; then
 		((LINES += 1))
 		SELECTION=$(echo -e "$WIFI_LIST\n~Scan\n$WIFI_SWITCH\n$WIRE_SWITCH\n~Change Wifi Interface\n~More Options" |
 			rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -a "0" \
 				-theme "$RASI_DIR" -theme-str '
-                window{width: '"$((WIDTH / 2))"'em;}
-                listview{lines: '"$LINES"';}
-                textbox-prompt-colon{str:"'"$PROMPT"':";}')
+				window{width: '"$((WIDTH / 2))"'em;}
+				listview{lines: '"$LINES"';}
+				textbox-prompt-colon{str:"'"$PROMPT"':";}')
 	else
 		SELECTION=$(echo -e "$WIFI_LIST\n~Scan\n$WIFI_SWITCH\n$WIRE_SWITCH\n~More Options" |
 			rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -a "0" \
 				-theme "$RASI_DIR" -theme-str '
-                window{width: '"$((WIDTH / 2))"'em;}
-                listview{lines: '"$LINES"';}
-                textbox-prompt-colon{str:"'"$PROMPT"':";}')
+				window{width: '"$((WIDTH / 2))"'em;}
+				listview{lines: '"$LINES"';}
+				textbox-prompt-colon{str:"'"$PROMPT"':";}')
 	fi
 	SSID_SELECTION=$(echo "$SELECTION" | sed "s/\s\{2,\}/\|/g" | awk -F "|" '{print $1}')
 	selection_action
@@ -88,10 +82,7 @@ function rofi_menu() {
 function change_wireless_interface() {
 	PROMPT=">_"
 	if [[ $(nmcli device | awk '$2=="wifi" {print $1}' | wc -l) -eq "2" ]]; then
-		[[ $WLAN_INT -eq "0" ]] && {
-			WLAN_INT=1
-			true
-		} || WLAN_INT=0
+		[[ $WLAN_INT -eq "0" ]] && WLAN_INT=1 || WLAN_INT=0
 	else
 		for i in "${!WIRELESS_INTERFACES[@]}"; do
 			LIST_WLAN_INT=("${LIST_WLAN_INT[@]}${WIRELESS_INTERFACES_PRODUCT[$i]}[${WIRELESS_INTERFACES[$i]}]\n")
@@ -100,9 +91,9 @@ function change_wireless_interface() {
 		CHANGE_WLAN_INT=$(echo -e "${LIST_WLAN_INT[@]}" |
 			rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
 				-theme "$RASI_DIR" -theme-str '
-                window{width: '"$((WIDTH / 2))"'em;}
-                listview{lines: '"$LINES"';}
-                textbox-prompt-colon{str:"'"$PROMPT"':";}')
+				window{width: '"$((WIDTH / 2))"'em;}
+				listview{lines: '"$LINES"';}
+				textbox-prompt-colon{str:"'"$PROMPT"':";}')
 		for i in "${!WIRELESS_INTERFACES[@]}"; do
 			[[ $CHANGE_WLAN_INT == "${WIRELESS_INTERFACES_PRODUCT[$i]}[${WIRELESS_INTERFACES[$i]}]" ]] && WLAN_INT=$i && break
 		done
@@ -111,51 +102,51 @@ function change_wireless_interface() {
 	rofi_menu
 }
 function scan() {
-	[[ "$WIFI_CON_STATE" =~ "unavailable" ]] && change_wifi_state "5" "normal" "Wi-Fi" "Enabling Wi-Fi connection" "on" && sleep 2
-	notification "5" "normal" "-t 0 Wifi" "Please Wait Scanning"
+	[[ "$WIFI_CON_STATE" =~ "unavailable" ]] && change_wifi_state "Wi-Fi" "Enabling Wi-Fi connection" "on" && sleep 2
+	notification "-t 0 Wifi" "Please Wait Scanning"
 	WIFI_LIST=$(nmcli --fields IN-USE,SSID,SECURITY,BARS device wifi list ifname "${WIRELESS_INTERFACES[WLAN_INT]}" --rescan yes | sed "s/^IN-USE\s//g" | sed "/--/d" | sed "/*/d" | sed "s/^ *//")
 	wireless_interface_state
-	notification "5" "normal" "-t 1 Wifi" "Please Wait Scanning"
+	notification "-t 1 Wifi" "Please Wait Scanning"
 	rofi_menu
 }
 function change_wifi_state() {
-	notification $1 $2 $3 "$4"
-	nmcli radio wifi $5
+	notification "$1" "$2"
+	nmcli radio wifi "$3"
 }
 function change_wire_state() {
-	notification $1 $2 $3 "$4"
-	nmcli con $5 "$(nmcli -t -f NAME,TYPE con | grep "ethernet" | cut -d":" -f1)"
+	notification "$1" "$2"
+	nmcli con "$3" "$(nmcli -t -f NAME,TYPE con | grep "ethernet" | cut -d":" -f1)"
 }
 function net_restart() {
-	notification $1 $2 $3 "$4"
+	notification "$1" "$2"
 	nmcli networking off
 	sleep 3
 	nmcli networking on
 }
 function disconnect() {
 	TRUE_ACTIVE_SSID=$(nmcli -t -f GENERAL.CONNECTION dev show "${WIRELESS_INTERFACES[WLAN_INT]}" | cut -d ':' -f2)
-	notification $1 $2 $3 "You're now disconnected from Wi-Fi network '$TRUE_ACTIVE_SSID'"
+	notification "$1" "You're now disconnected from Wi-Fi network '$TRUE_ACTIVE_SSID'"
 	nmcli con down id "$TRUE_ACTIVE_SSID"
 }
 function check_wifi_connected() {
-	[[ "$(nmcli device status | grep "^${WIRELESS_INTERFACES[WLAN_INT]}." | awk '{print $3}')" == "connected" ]] && disconnect "5" "normal" "Connection_Terminated"
+	[[ "$(nmcli device status | grep "^${WIRELESS_INTERFACES[WLAN_INT]}." | awk '{print $3}')" == "connected" ]] && disconnect "Connection_Terminated"
 }
 function connect() {
 	check_wifi_connected
-	notification "5" "normal" "Wi-Fi" "Connecting to $1"
+	notification "Wi-Fi" "Connecting to $1"
 	if [[ $(nmcli dev wifi con "$1" password "$2" ifname "${WIRELESS_INTERFACES[WLAN_INT]}" | grep -c "successfully activated") == "1" ]]; then
-		notification "5" "normal" "Connection_Established" "You're now connected to Wi-Fi network '$1' "
+		notification "Connection_Established" "You're now connected to Wi-Fi network '$1'"
 	else
-		notification "5" "normal" "Connection_Error" "Connection can not be established"
+		notification "Connection_Error" "Connection can not be established"
 	fi
 }
 function stored_connection() {
 	check_wifi_connected
-	notification "5" "normal" "Wi-Fi" "Connecting to $1"
+	notification "Wi-Fi" "Connecting to $1"
 	if [[ $(nmcli dev wifi con "$1" ifname "${WIRELESS_INTERFACES[WLAN_INT]}" | grep -c "successfully activated") = "1" ]]; then
-		notification "5" "normal" "Connection_Established" "You're now connected to Wi-Fi network '$1' "
+		notification "Connection_Established" "You're now connected to Wi-Fi network '$1'"
 	else
-		notification "5" "normal" "Connection_Error" "Connection can not be established"
+		notification "Connection_Error" "Connection can not be established"
 	fi
 }
 function ssid_manual() {
@@ -164,10 +155,10 @@ function ssid_manual() {
 	WIDTH=35
 	SSID=$(rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
 		-theme "$RASI_DIR" -theme-str '
-        window{width: '"$((WIDTH / 2))"'em;}
-        listview{lines: '"$LINES"';}
-        textbox-prompt-colon{str:"'"$PROMPT"':";}')
-	if [[ -n $SSID ]]; then
+		window{width: '"$((WIDTH / 2))"'em;}
+		listview{lines: '"$LINES"';}
+		textbox-prompt-colon{str:"'"$PROMPT"':";}')
+	[[ -n $SSID ]] && {
 		LINES=1
 		WIDTH=$(echo "$PASSWORD_ENTER" | awk '{print length($0);}')
 		((WIDTH += WIDTH_FIX_MAIN))
@@ -175,11 +166,11 @@ function ssid_manual() {
 		PASS=$(echo "$PASSWORD_ENTER" |
 			rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -password \
 				-theme "$RASI_DIR" -theme-str '
-                window{width: '"$((WIDTH / 2))"'em;}
-                listview{lines: '"$LINES"';}
-                textbox-prompt-colon{str:"'"$PROMPT"':";}')
+				window{width: '"$((WIDTH / 2))"'em;}
+				listview{lines: '"$LINES"';}
+				textbox-prompt-colon{str:"'"$PROMPT"':";}')
 		if [[ -n "$PASS" ]]; then
-			if [[ "$PASS" =~ "$PASSWORD_ENTER" ]]; then
+			if [[ "$PASS" =~ $PASSWORD_ENTER ]]; then
 				stored_connection "$SSID"
 			else
 				connect "$SSID" "$PASS"
@@ -187,7 +178,7 @@ function ssid_manual() {
 		else
 			stored_connection "$SSID"
 		fi
-	fi
+	}
 }
 function ssid_hidden() {
 	LINES=0
@@ -195,10 +186,10 @@ function ssid_hidden() {
 	WIDTH=35
 	SSID=$(rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
 		-theme "$RASI_DIR" -theme-str '
-        window{width: '"$((WIDTH / 2))"'em;}
-        listview{lines: '"$LINES"';}
-        textbox-prompt-colon{str:"'"$PROMPT"':";}')
-	if [[ -n $SSID ]]; then
+		window{width: '"$((WIDTH / 2))"'em;}
+		listview{lines: '"$LINES"';}
+		textbox-prompt-colon{str:"'"$PROMPT"':";}')
+	[[ -n $SSID ]] && {
 		LINES=1
 		WIDTH=$(echo "$PASSWORD_ENTER" | awk '{print length($0);}')
 		((WIDTH += WIDTH_FIX_MAIN))
@@ -206,80 +197,89 @@ function ssid_hidden() {
 		PASS=$(echo "$PASSWORD_ENTER" |
 			rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
 				-password -theme "$RASI_DIR" -theme-str '
-                window{width: '"$((WIDTH / 2))"'em;}
-                listview{lines: '"$LINES"';}
-                textbox-prompt-colon{str:"'"$PROMPT"':";}
-                ')
+				window{width: '"$((WIDTH / 2))"'em;}
+				listview{lines: '"$LINES"';}
+				textbox-prompt-colon{str:"'"$PROMPT"':";}
+				')
 		if [[ -n "$PASS" ]]; then
-			if [[ "$PASS" =~ "$PASSWORD_ENTER" ]]; then
+			if [[ "$PASS" =~ $PASSWORD_ENTER ]]; then
 				check_wifi_connected
-				notification "5" "normal" "Wi-Fi" "Connecting to $SSID"
+				notification "Wi-Fi" "Connecting to $SSID"
 				if [[ $(nmcli dev wifi con "$SSID" ifname "${WIRELESS_INTERFACES[WLAN_INT]}" hidden yes | grep -c "successfully activated") = "1" ]]; then
-					notification "5" "normal" "Connection_Established" "You're now connected to Wi-Fi network '$SSID' "
+					notification "Connection_Established" "You're now connected to Wi-Fi network '$SSID'"
 				else
-					notification "5" "normal" "Connection_Error" "Connection can not be established"
+					notification "Connection_Error" "Connection can not be established"
 				fi
 			else
 				check_wifi_connected
-				notification "5" "normal" "Wi-Fi" "Connecting to $SSID"
+				notification "Wi-Fi" "Connecting to $SSID"
 				if [[ $(nmcli dev wifi con "$SSID" password "$PASS" ifname "${WIRELESS_INTERFACES[WLAN_INT]}" | grep -c "successfully activated") == "1" ]]; then
-					notification "5" "normal" "Connection_Established" "You're now connected to Wi-Fi network '$SSID' "
+					notification "Connection_Established" "You're now connected to Wi-Fi network '$SSID'"
 				else
-					notification "5" "normal" "Connection_Error" "Connection can not be established"
+					notification "Connection_Error" "Connection can not be established"
 				fi
 			fi
 		else
 			check_wifi_connected
-			notification "5" "normal" "Wi-Fi" "Connecting to $SSID"
+			notification "Wi-Fi" "Connecting to $SSID"
 			if [[ $(nmcli dev wifi con "'$SSID'" ifname "${WIRELESS_INTERFACES[WLAN_INT]}" hidden yes | grep -c "successfully activated") = "1" ]]; then
-				notification "5" "normal" "Connection_Established" "You're now connected to Wi-Fi network $SSID "
+				notification "Connection_Established" "You're now connected to Wi-Fi network '$SSID'"
 			else
-				notification "5" "normal" "Connection_Error" "Connection can not be established"
+				notification "Connection_Error" "Connection can not be established"
 			fi
 		fi
-	fi
+	}
 }
 function status() {
-	LINES=2
+	LINES=0
 	WIDTH=0
 	for i in "${!WIRELESS_INTERFACES[@]}"; do
 		WIFI_CON_STATE=$(nmcli device status | grep "^${WIRELESS_INTERFACES[i]}." | awk '{print $3}')
+		WIFI_INT_NAME=${WLAN_STATUS[*]}${WIRELESS_INTERFACES_PRODUCT[$i]}[${WIRELESS_INTERFACES[$i]}]
 		if [[ "$WIFI_CON_STATE" == "connected" ]]; then
-			WLAN_STATUS=("${WLAN_STATUS[@]}${WIRELESS_INTERFACES_PRODUCT[$i]}[${WIRELESS_INTERFACES[$i]}]:\n\t$(nmcli -t -f GENERAL.CONNECTION dev show "${WIRELESS_INTERFACES[$i]}" | awk -F '[:]' '{print $2}') ~ $(nmcli -t -f IP4.ADDRESS dev show "${WIRELESS_INTERFACES[$i]}" | awk -F '[:/]' '{print $2}')\n")
+			WLAN_STATUS=("$WIFI_INT_NAME:\n\t$(nmcli -t -f GENERAL.CONNECTION dev show "${WIRELESS_INTERFACES[$i]}" | awk -F '[:]' '{print $2}') ~ $(nmcli -t -f IP4.ADDRESS dev show "${WIRELESS_INTERFACES[$i]}" | awk -F '[:/]' '{print $2}')\n")
+			((LINES += 2))
 		else
-			WLAN_STATUS=("${WLAN_STATUS[@]}${WIRELESS_INTERFACES_PRODUCT[$i]}[${WIRELESS_INTERFACES[$i]}]:\n\t${WIFI_CON_STATE^}\n")
+			WLAN_STATUS=("$WIFI_INT_NAME:\t${WIFI_CON_STATE^}\n")
+			((LINES += 1))
 		fi
-		((LINES += 2))
 	done
-	WIDTH_TEMP=$(echo -e "$WLAN_STATUS" | tail -n 2 | head -n 1 | awk '{print length($0);}')
+	WLAN_STATUS[-1]=${WLAN_STATUS[-1]::-2}
+	WIDTH_TEMP=$(echo -e "${WLAN_STATUS[*]}" | tail -n 2 | head -n 1 | awk '{print length($0);}')
 	[[ $WIDTH_TEMP -gt $WIDTH ]] && WIDTH=$WIDTH_TEMP
 	WIRE_CON_STATE=$(nmcli device status | grep "ethernet" | awk '{print $3}')
+	WIRE_INT_NAME="$(nmcli device | awk '$2=="ethernet" {print $1}'):\n\t$(nmcli -t -f GENERAL.CONNECTION dev show "$(nmcli device | awk '$2=="ethernet" {print $1}')" | cut -d":" -f2)"
 	if [[ "$WIRE_CON_STATE" == "connected" ]]; then
-		ETH_STATUS="$(nmcli device | awk '$2=="ethernet" {print $1}'):\n\t$(nmcli -t -f GENERAL.CONNECTION dev show "$(nmcli device | awk '$2=="ethernet" {print $1}')" | cut -d":" -f2) ~ "$(nmcli -t -f IP4.ADDRESS dev show "$(nmcli device | awk '$2=="ethernet" {print $1}')" | awk -F '[:/]' '{print $2}')
+		ETH_STATUS="$WIRE_INT_NAME ~ "$(nmcli -t -f IP4.ADDRESS dev show "$(nmcli device | awk '$2=="ethernet" {print $1}')" | awk -F '[:/]' '{print $2}')
+		((LINES += 2))
 	else
-		ETH_STATUS="$(nmcli device | awk '$2=="ethernet" {print $1}'):\n\t$(nmcli -t -f GENERAL.CONNECTION dev show "$(nmcli device | awk '$2=="ethernet" {print $1}')" | cut -d":" -f2)${WIRE_CON_STATE^}"
+		ETH_STATUS="$WIRE_INT_NAME${WIRE_CON_STATE^}"
+		((LINES += 1))
 	fi
 	WIDTH_TEMP=$(echo -e "$ETH_STATUS" | tail -n 1 | awk '{print length($0);}')
 	[[ $WIDTH_TEMP -gt $WIDTH ]] && WIDTH=$WIDTH_TEMP
 	((WIDTH += WIDTH_FIX_STATUS))
-	[[ $WIDTH -le 20 ]] && WIDTH=35
-	echo -e "$ETH_STATUS\n${WLAN_STATUS[*]}" |
+	[[ $WIDTH -le 25 ]] && WIDTH=35
+	OPTIONS="$ETH_STATUS\n${WLAN_STATUS[*]}"
+	ACTIVE_VPN=$(nmcli -g NAME,TYPE con show --active | awk '/:vpn/' | sed 's/:vpn.*//g')
+	[[ -n $ACTIVE_VPN ]] && OPTIONS="${OPTIONS}\n${ACTIVE_VPN}[VPN]:\t$(nmcli -g ip4.address con show "UTH Library" | awk -F '[:/]' '{print $1}')" && ((LINES += 1))
+	echo -e "$OPTIONS" |
 		rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
 			-theme "$RASI_DIR" -theme-str '
-            window{width: '"$((WIDTH / 2))"'em;
-            children: [listview];}
-            listview{lines: '"$LINES"';}'
+			window{width: '"$((WIDTH / 2))"'em;
+			children: [listview];}
+			listview{lines: '"$LINES"';}'
 }
 function share_pass() {
 	LINES=$(nmcli dev wifi show-password | grep -c -e SSID: -e Password:)
 	((LINES += 1))
 	WIDTH=35
 	SELECTION=$(echo -e "$(nmcli dev wifi show-password | grep -e SSID: -e Password:)\n~QrCode" |
-		rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -a "2" \
+		rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -a "$((LINES - 1))" \
 			-theme "$RASI_DIR" -theme-str '
-            window{width: '"$((WIDTH / 2))"'em;
-            children: [listview];}
-            listview{lines: '"$LINES"';}')
+			window{width: '"$((WIDTH / 2))"'em;
+			children: [listview];}
+			listview{lines: '"$LINES"';}')
 	selection_action
 }
 function gen_qrcode() {
@@ -287,20 +287,20 @@ function gen_qrcode() {
 	rofi -dmenu -location "$QRCODE_LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
 		-theme-str '
 		* {
-            background-color: transparent;
-            text-color:       transparent;}
-        window {
-            border-radius: 6px;
-            padding: 1em;
-            background-color: transparent;
-            background-image: url("'$QRCODE_DIR'wifi_qr.png",width);
-            width: 20em;}
-        textbox-prompt-colon {
-            expand: false;
-            margin: 0;
-            str:"";}
-        listview { lines: 15;}
-        entry { enabled: false;}'
+			background-color: transparent;
+			text-color:       transparent;}
+		window {
+			border-radius: 6px;
+			padding: 1em;
+			background-color: transparent;
+			background-image: url("'$QRCODE_DIR'wifi_qr.png",width);
+			width: 20em;}
+		textbox-prompt-colon {
+			expand: false;
+			margin: 0;
+			str:"";}
+		listview { lines: 15;}
+		entry { enabled: false;}'
 }
 function manual_hidden() {
 	LINES=2
@@ -308,66 +308,102 @@ function manual_hidden() {
 	SELECTION=$(echo -e "~Manual\n~Hidden" |
 		rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
 			-theme "$RASI_DIR" -theme-str '
-            window{
+			window{
 				width: '"$((WIDTH / 2))"'em;
-            	children: [listview];}
-            listview{lines: '"$LINES"';}')
+				children: [listview];}
+			listview{lines: '"$LINES"';}')
 	selection_action
+}
+function vpn() {
+	ACTIVE_VPN=$(nmcli -g NAME,TYPE con show --active | awk '/:vpn/' | sed 's/:vpn.*//g')
+	WIDTH=35
+	if [[ $ACTIVE_VPN ]]; then
+		PROMPT="$ACTIVE_VPN"
+		LINES=1
+		VPN_ACTION=$(echo -e "~Deactive VPN" |
+			rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
+				-theme "$RASI_DIR" -theme-str '
+				window{width: '"$((WIDTH / 2))"'em;}
+				listview{lines: '"$LINES"';}
+				textbox-prompt-colon{str:"'"$PROMPT"':";}')
+		[[ "$VPN_ACTION" =~ "~Deactive VPN" ]] && nmcli connection down "$ACTIVE_VPN" && notification "VPN_Deactivated" "$ACTIVE_VPN"
+	else
+		PROMPT="VPN"
+		VPN_LIST=$(nmcli -g NAME,TYPE connection | awk '/:vpn/' | sed 's/:vpn.*//g')
+		LINES=$(nmcli -g NAME,TYPE connection | awk '/:vpn/' | sed 's/:vpn.*//g' | wc -l)
+		VPN_ACTION=$(echo -e "$VPN_LIST" |
+			rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
+				-theme "$RASI_DIR" -theme-str '
+				window{width: '"$((WIDTH / 2))"'em;}
+				listview{lines: '"$LINES"';}
+				textbox-prompt-colon{str:"'"$PROMPT"':";}')
+		[[ -n "$VPN_ACTION" ]] && {
+			VPN_OUTPUT=$(nmcli connection up "$VPN_ACTION" 2>/dev/null)
+			notification "-t 0 Activating_VPN" "$VPN_ACTION"
+			if [[ $(echo "$VPN_OUTPUT" | grep -c "Connection successfully activated") -eq "1" ]]; then
+				notification "VPN_Successfully_Activated" "$VPN_ACTION"
+			else
+				notification "Error_Activating_VPN" "Check your configuration for $VPN_ACTION"
+			fi
+		}
+	fi
 }
 function more_options() {
 	LINES=2
 	WIDTH=35
 	[[ "$WIFI_CON_STATE" == "connected" ]] && OPTIONS="~Share Wifi Password\n" && ((LINES += 1))
 	OPTIONS="${OPTIONS}~Status\n~Restart Network"
+	[[ $(nmcli -g NAME,TYPE connection | awk '/:vpn/' | sed 's/:vpn.*//g') ]] && OPTIONS="${OPTIONS}\n~VPN" && ((LINES += 1))
 	[[ -x "$(command -v nm-connection-editor)" ]] && OPTIONS="${OPTIONS}\n~Open Connection Editor" && ((LINES += 1))
 	SELECTION=$(echo -e "$OPTIONS" |
 		rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
 			-theme "$RASI_DIR" -theme-str '
-            window{
+			window{
 				width: '"$((WIDTH / 2))"'em;
-            	children: [listview];}
-            listview{lines: '"$LINES"';}')
+				children: [listview];}
+			listview{lines: '"$LINES"';}')
 	selection_action
 }
 function selection_action() {
 	case "$SELECTION" in
-	"~Disconnect") disconnect "5" "normal" "Connection_Terminated" ;;
+	"~Disconnect") disconnect "Connection_Terminated" ;;
 	"~Scan") scan ;;
 	"~Status") status ;;
 	"~Share Wifi Password") share_pass ;;
 	"~Manual/Hidden") manual_hidden ;;
 	"~Manual") ssid_manual ;;
 	"~Hidden") ssid_hidden ;;
-	"~Wi-Fi On") change_wifi_state "5" "normal" "Wi-Fi" "Enabling Wi-Fi connection" "on" ;;
-	"~Wi-Fi Off") change_wifi_state "5" "normal" "Wi-Fi" "Disabling Wi-Fi connection" "off" ;;
-	"~Eth Off") change_wire_state "5" "normal" "Ethernet" "Disabling Wired connection" "down" ;;
-	"~Eth On") change_wire_state "5" "normal" "Ethernet" "Enabling Wired connection" "up" ;;
+	"~Wi-Fi On") change_wifi_state "Wi-Fi" "Enabling Wi-Fi connection" "on" ;;
+	"~Wi-Fi Off") change_wifi_state "Wi-Fi" "Disabling Wi-Fi connection" "off" ;;
+	"~Eth Off") change_wire_state "Ethernet" "Disabling Wired connection" "down" ;;
+	"~Eth On") change_wire_state "Ethernet" "Enabling Wired connection" "up" ;;
 	"   ***Wi-Fi Disabled***   ") ;;
 	" ***Wired Unavailable***") ;;
 	"~Change Wifi Interface") change_wireless_interface ;;
-	"~Restart Network") net_restart "5" "normal" "Network" "Restarting Network" ;;
+	"~Restart Network") net_restart "Network" "Restarting Network" ;;
 	"~QrCode") gen_qrcode ;;
 	"~More Options") more_options ;;
 	"~Open Connection Editor") nm-connection-editor ;;
+	"~VPN") vpn ;;
 	*)
 		LINES=1
 		WIDTH=$(echo "$PASSWORD_ENTER" | awk '{print length($0);}')
 		((WIDTH += WIDTH_FIX_MAIN))
 		PROMPT="Enter_Password"
-		if [[ -n "$SELECTION" ]] && [[ "$WIFI_LIST" =~ .*"$SELECTION".* ]]; then
+		[[ -n "$SELECTION" ]] && [[ "$WIFI_LIST" =~ .*"$SELECTION".* ]] && {
 			[[ "$SSID_SELECTION" = "*" ]] && SSID_SELECTION=$(echo "$SELECTION" | sed "s/\s\{2,\}/\|/g " | awk -F "|" '{print $3}')
 			if [[ "$ACTIVE_SSID" == "$SSID_SELECTION" ]]; then
 				nmcli con up "$SSID_SELECTION" ifname "${WIRELESS_INTERFACES[WLAN_INT]}"
 			else
-				if [[ "$SELECTION" =~ "WPA2" ]] || [[ "$SELECTION" =~ "WEP" ]]; then
+				[[ "$SELECTION" =~ "WPA2" ]] || [[ "$SELECTION" =~ "WEP" ]] && {
 					PASS=$(echo "$PASSWORD_ENTER" | rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -password \
 						-theme "$RASI_DIR" -theme-str '
 							window{width: '"$((WIDTH / 2))"'em;}
 							listview{lines: '"$LINES"';}
 							textbox-prompt-colon{str:"'"$PROMPT"':";}')
-				fi
+				}
 				if [[ -n "$PASS" ]]; then
-					if [[ "$PASS" =~ "$PASSWORD_ENTER" ]]; then
+					if [[ "$PASS" =~ $PASSWORD_ENTER ]]; then
 						stored_connection "$SSID_SELECTION"
 					else
 						connect "$SSID_SELECTION" "$PASS"
@@ -376,7 +412,7 @@ function selection_action() {
 					stored_connection "$SSID_SELECTION"
 				fi
 			fi
-		fi
+		}
 		;;
 	esac
 }

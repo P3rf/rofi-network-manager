@@ -34,6 +34,7 @@ Inspired from [rofi-wifi-menu](https://github.com/zbaylin/rofi-wifi-menu).
 - Status
   - See devices Connection name and local IP
 - See Current wifi password and share it with a qrcode
+- Connect to pre-configure VPNs
 
 ### Screenshots
 
