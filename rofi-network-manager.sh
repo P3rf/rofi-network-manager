@@ -16,7 +16,7 @@ WLAN_INT=0
 
 function initialization() {
 	source "$DIR/rofi-network-manager.conf" || source "${XDG_CONFIG_HOME:-$HOME/.config}/rofi/rofi-network-manager.conf" || exit
-	RASI_DIR="$DIR/rofi-network-manager.rasi" && [[ -f "$DIR/rofi-network-manager.rasi" ]] || RASI_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/rofi/rofi-network-manager.rasi" && [[ -f "${XDG_CONFIG_HOME:-$HOME/.config}/rofi/rofi-network-manager.rasi" ]] || exit
+	{ RASI_DIR="$DIR/rofi-network-manager.rasi" && [[ -f "$DIR/rofi-network-manager.rasi" ]]; } || { RASI_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/rofi/rofi-network-manager.rasi" && [[ -f "${XDG_CONFIG_HOME:-$HOME/.config}/rofi/rofi-network-manager.rasi" ]]; } || exit
 	for i in "${WIRELESS_INTERFACES[@]}"; do
 		WIRELESS_INTERFACES_PRODUCT+=("$(nmcli -f general.product device show "$i" | awk '{print $2}')")
 	done
@@ -240,7 +240,7 @@ function status() {
 			WLAN_STATUS=("$WIFI_INT_NAME:\n\t$(nmcli -t -f GENERAL.CONNECTION dev show "${WIRELESS_INTERFACES[$i]}" | awk -F '[:]' '{print $2}') ~ $(nmcli -t -f IP4.ADDRESS dev show "${WIRELESS_INTERFACES[$i]}" | awk -F '[:/]' '{print $2}')\n")
 			((LINES += 2))
 		else
-			WLAN_STATUS=("$WIFI_INT_NAME:\t${WIFI_CON_STATE^}\n")
+			WLAN_STATUS=("$WIFI_INT_NAME: ${WIFI_CON_STATE^}\n")
 			((LINES += 1))
 		fi
 	done
@@ -248,12 +248,13 @@ function status() {
 	WIDTH_TEMP=$(echo -e "${WLAN_STATUS[*]}" | tail -n 2 | head -n 1 | awk '{print length($0);}')
 	[[ $WIDTH_TEMP -gt $WIDTH ]] && WIDTH=$WIDTH_TEMP
 	WIRE_CON_STATE=$(nmcli device status | grep "ethernet" | awk '{print $3}')
-	WIRE_INT_NAME="$(nmcli device | awk '$2=="ethernet" {print $1}'):\n\t$(nmcli -t -f GENERAL.CONNECTION dev show "$(nmcli device | awk '$2=="ethernet" {print $1}')" | cut -d":" -f2)"
+	WIRE_INT_NAME="$(nmcli device | awk '$2=="ethernet" {print $1}')"
 	if [[ "$WIRE_CON_STATE" == "connected" ]]; then
-		ETH_STATUS="$WIRE_INT_NAME ~ "$(nmcli -t -f IP4.ADDRESS dev show "$(nmcli device | awk '$2=="ethernet" {print $1}')" | awk -F '[:/]' '{print $2}')
+		WIRE_CON_NAME=$(nmcli -g name,device con | awk '/:'"$WIRE_INT_NAME"'/' | sed 's/:'"$WIRE_INT_NAME"'.*//g')
+		ETH_STATUS="$WIRE_INT_NAME:\n\t$WIRE_CON_NAME ~ "$(nmcli -t -f IP4.ADDRESS dev show "$(nmcli device | awk '$2=="ethernet" {print $1}')" | awk -F '[:/]' '{print $2}')
 		((LINES += 2))
 	else
-		ETH_STATUS="$WIRE_INT_NAME${WIRE_CON_STATE^}"
+		ETH_STATUS="$WIRE_INT_NAME: ${WIRE_CON_STATE^}"
 		((LINES += 1))
 	fi
 	WIDTH_TEMP=$(echo -e "$ETH_STATUS" | tail -n 1 | awk '{print length($0);}')
