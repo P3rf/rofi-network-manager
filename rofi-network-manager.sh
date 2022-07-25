@@ -54,6 +54,8 @@ function ethernet_interface_state() {
 		WIRE_SWITCH="~Eth Off"
 	elif [[ "$WIRE_CON_STATE" == "unavailable" ]]; then
 		WIRE_SWITCH=" ***Wired Unavailable***"
+	elif [[ "$WIRE_CON_STATE" == "connecting" ]]; then
+		WIRE_SWITCH=" **Wired Initializing**"
 	fi
 }
 function rofi_menu() {
@@ -250,7 +252,7 @@ function status() {
 	WIRE_CON_STATE=$(nmcli device status | grep "ethernet" | awk '{print $3}')
 	WIRE_INT_NAME="$(nmcli device | awk '$2=="ethernet" {print $1}')"
 	if [[ "$WIRE_CON_STATE" == "connected" ]]; then
-		WIRE_CON_NAME=$(nmcli -g name,device con | awk '/:'"$WIRE_INT_NAME"'/' | sed 's/:'"$WIRE_INT_NAME"'.*//g')
+		WIRE_CON_NAME=$(nmcli -t -f GENERAL.CONNECTION dev show "$WIRE_INT_NAME" | cut -d":" -f2)
 		ETH_STATUS="$WIRE_INT_NAME:\n\t$WIRE_CON_NAME ~ "$(nmcli -t -f IP4.ADDRESS dev show "$(nmcli device | awk '$2=="ethernet" {print $1}')" | awk -F '[:/]' '{print $2}')
 		((LINES += 2))
 	else
@@ -263,7 +265,7 @@ function status() {
 	[[ $WIDTH -le 25 ]] && WIDTH=35
 	OPTIONS="$ETH_STATUS\n${WLAN_STATUS[*]}"
 	ACTIVE_VPN=$(nmcli -g NAME,TYPE con show --active | awk '/:vpn/' | sed 's/:vpn.*//g')
-	[[ -n $ACTIVE_VPN ]] && OPTIONS="${OPTIONS}\n${ACTIVE_VPN}[VPN]:\t$(nmcli -g ip4.address con show "UTH Library" | awk -F '[:/]' '{print $1}')" && ((LINES += 1))
+	[[ -n $ACTIVE_VPN ]] && OPTIONS="${OPTIONS}\n${ACTIVE_VPN}[VPN]:\t$(nmcli -g ip4.address con show "${ACTIVE_VPN}" | awk -F '[:/]' '{print $1}')" && ((LINES += 1))
 	echo -e "$OPTIONS" |
 		rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
 			-theme "$RASI_DIR" -theme-str '
@@ -380,6 +382,7 @@ function selection_action() {
 	"~Eth On") change_wire_state "Ethernet" "Enabling Wired connection" "up" ;;
 	"   ***Wi-Fi Disabled***   ") ;;
 	" ***Wired Unavailable***") ;;
+	" **Wired Initializing**") ;;
 	"~Change Wifi Interface") change_wireless_interface ;;
 	"~Restart Network") net_restart "Network" "Restarting Network" ;;
 	"~QrCode") gen_qrcode ;;
