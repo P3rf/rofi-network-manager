@@ -15,10 +15,14 @@ Inspired from [rofi-wifi-menu](https://github.com/zbaylin/rofi-wifi-menu).
 
 ### Requirements
 
-- nmcli
+- [NetworkManager] (_nmcli_)
 - [rofi](https://github.com/davatorium/rofi)
-- [dunst](https://github.com/dunst-project/dunst) (_Optional_) (_For notifications_)
-- [qrencode](https://fukuchi.org/works/qrencode) (_For sharing wifi with qrcode_)
+- [Notification Daemon](_Optional_) (_For notifications_)
+  - [notify-osd](https://launchpad.net/notify-osd)
+  - [dunst](https://github.com/dunst-project/dunst)
+  - [fnott](https://codeberg.org/dnkl/fnott)
+- [nm-connection-editor](_Optional_) (_For editing connections_)
+- [qrencode](https://fukuchi.org/works/qrencode) (_Optional_) (_For sharing wifi with qrcode_)
 
 ### Features
 
@@ -65,7 +69,7 @@ NOTIFICATIONS_INIT="off"
 #Location of qrcode wifi image
 QRCODE_DIR="/tmp/"
 # WIDTH_FIX/WIDTH_FIX_STATUS needs to be increased or decreased , if the text
-# doesn't fit  or it has too much space at the end when you launch rofi-network-manager.
+# doesn't fit or it has too much space at the end when you launch rofi-network-manager.
 #It depends on the font type and size.
 WIDTH_FIX_MAIN=1
 WIDTH_FIX_STATUS=10
@@ -101,12 +105,12 @@ type = internal/network
 interface = wlan0
 interval = 3.0
 unknown-as-up = true
-format-connected-background  = ${colors.background}
-format-connected-foreground  = ${colors.foreground}
+format-connected-background = ${colors.background}
+format-connected-foreground = ${colors.foreground}
 format-connected-padding = 1
 format-connected = %{A1:$HOME/.../rofi-network-manager/rofi-network-manager.sh:}<ramp-signal> <label-connected>%{A}
 label-connected = %essid%/%local_ip%
-format-disconnected-background  = ${colors.background}
+format-disconnected-background = ${colors.background}
 format-disconnected-foreground = ${colors.foreground}
 format-disconnected-padding = 1
 format-disconnected = %{A1:$HOME/.../rofi-network-manager/rofi-network-manager.sh:}<label-disconnected>%{A}
@@ -124,12 +128,12 @@ ramp-signal-foreground = ${colors.white}
 type = internal/network
 interface = eth0
 interval = 3.0
-format-connected-background  = ${colors.background}
-format-connected-foreground  = ${colors.foreground}
+format-connected-background = ${colors.background}
+format-connected-foreground = ${colors.foreground}
 format-connected-padding = 1
 format-connected = %{A1:$HOME/.../rofi-network-manager/rofi-network-manager.sh:}<label-connected>%{A}
 label-connected =  %local_ip%
-format-disconnected-background  = ${colors.background}
+format-disconnected-background = ${colors.background}
 format-disconnected-foreground = ${colors.foreground-alt}
 format-disconnected-padding = 1
 format-disconnected = %{A1:$HOME/.../rofi-network-manager/rofi-network-manager.sh:}<label-disconnected>%{A}

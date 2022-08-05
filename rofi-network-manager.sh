@@ -24,25 +24,30 @@ function initialization() {
 	ethernet_interface_state
 }
 function notification() {
-	[[ "$NOTIFICATIONS_INIT" == "on" ]] && dunstify -r "5" -u "normal" $1 "$2"
+	[[ "$NOTIFICATIONS_INIT" == "on" && -x "$(command -v nm-connection-editor)" ]] && notify-send -r "5" -u "normal" $1 "$2"
 }
 function wireless_interface_state() {
+	LINES=0
+	WIDTH=0
+	OPTIONS=""
 	ACTIVE_SSID=$(nmcli device status | grep "^${WIRELESS_INTERFACES[WLAN_INT]}." | awk '{print $4}')
 	WIFI_CON_STATE=$(nmcli device status | grep "^${WIRELESS_INTERFACES[WLAN_INT]}." | awk '{print $3}')
 	if [[ "$WIFI_CON_STATE" =~ "unavailable" ]]; then
 		WIFI_LIST="   ***Wi-Fi Disabled***"
 		WIFI_SWITCH="~Wi-Fi On"
-		LINES=5
+		OPTIONS="${OPTIONS}${WIFI_LIST}\n${WIFI_SWITCH}\n~Scan"
+		((LINES += 3))
 	elif [[ "$WIFI_CON_STATE" =~ "connected" ]]; then
 		WIFI_LIST=$(nmcli --fields IN-USE,SSID,SECURITY,BARS device wifi list ifname "${WIRELESS_INTERFACES[WLAN_INT]}" | awk -F'  +' '{ if (!seen[$2]++) print}' | sed "s/^IN-USE\s//g" | sed "/--/d" | sed "/*/d" | sed "s/^ *//")
 		LINES=$(echo -e "$WIFI_LIST" | wc -l)
 		if [[ "$ACTIVE_SSID" == "--" ]]; then
-			WIFI_SWITCH="~Manual/Hidden\n~Wi-Fi Off"
-			((LINES += 5))
+			WIFI_SWITCH="~Scan\n~Manual/Hidden\n~Wi-Fi Off"
+			((LINES += 3))
 		else
-			WIFI_SWITCH="~Disconnect\n~Manual/Hidden\n~Wi-Fi Off"
-			((LINES += 6))
+			WIFI_SWITCH="~Scan\n~Disconnect\n~Manual/Hidden\n~Wi-Fi Off"
+			((LINES += 4))
 		fi
+		OPTIONS="${OPTIONS}${WIFI_LIST}\n${WIFI_SWITCH}"
 	fi
 	WIDTH=$(echo "$WIFI_LIST" | head -n 1 | awk '{print length($0);}')
 }
@@ -57,21 +62,26 @@ function ethernet_interface_state() {
 	elif [[ "$WIRE_CON_STATE" == "connecting" ]]; then
 		WIRE_SWITCH=" **Wired Initializing**"
 	fi
+	((LINES += 1))
+	OPTIONS="${OPTIONS}\n${WIRE_SWITCH}"
 }
 function rofi_menu() {
 	[[ $LINES -eq 0 ]] && notification "Initialization" "Some connections are being set up.Please try again later." && exit
 	((WIDTH += WIDTH_FIX_MAIN))
 	PROMPT=${WIRELESS_INTERFACES_PRODUCT[WLAN_INT]}[${WIRELESS_INTERFACES[WLAN_INT]}]
 	if [[ $(nmcli device | awk '$2=="wifi" {print $1}' | wc -l) -ne "1" ]]; then
-		((LINES += 1))
-		SELECTION=$(echo -e "$WIFI_LIST\n~Scan\n$WIFI_SWITCH\n$WIRE_SWITCH\n~Change Wifi Interface\n~More Options" |
+		OPTIONS="${OPTIONS}\n~Change Wifi Interface\n~More Options"
+		((LINES += 2))
+		SELECTION=$(echo -e "$OPTIONS" |
 			rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -a "0" \
 				-theme "$RASI_DIR" -theme-str '
 				window{width: '"$((WIDTH / 2))"'em;}
 				listview{lines: '"$LINES"';}
 				textbox-prompt-colon{str:"'"$PROMPT"':";}')
 	else
-		SELECTION=$(echo -e "$WIFI_LIST\n~Scan\n$WIFI_SWITCH\n$WIRE_SWITCH\n~More Options" |
+		OPTIONS="${OPTIONS}\n~More Options"
+		((LINES += 1))
+		SELECTION=$(echo -e "$OPTIONS" |
 			rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -a "0" \
 				-theme "$RASI_DIR" -theme-str '
 				window{width: '"$((WIDTH / 2))"'em;}
@@ -101,6 +111,7 @@ function change_wireless_interface() {
 		done
 	fi
 	wireless_interface_state
+	ethernet_interface_state
 	rofi_menu
 }
 function scan() {
@@ -108,6 +119,7 @@ function scan() {
 	notification "-t 0 Wifi" "Please Wait Scanning"
 	WIFI_LIST=$(nmcli --fields IN-USE,SSID,SECURITY,BARS device wifi list ifname "${WIRELESS_INTERFACES[WLAN_INT]}" --rescan yes | awk -F'  +' '{ if (!seen[$2]++) print}' | sed "s/^IN-USE\s//g" | sed "/--/d" | sed "/*/d" | sed "s/^ *//")
 	wireless_interface_state
+	ethernet_interface_state
 	notification "-t 1 Wifi" "Please Wait Scanning"
 	rofi_menu
 }
@@ -153,8 +165,8 @@ function stored_connection() {
 }
 function ssid_manual() {
 	LINES=0
-	PROMPT="Enter_SSID"
 	WIDTH=35
+	PROMPT="Enter_SSID"
 	SSID=$(rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
 		-theme "$RASI_DIR" -theme-str '
 		window{width: '"$((WIDTH / 2))"'em;}
@@ -184,8 +196,8 @@ function ssid_manual() {
 }
 function ssid_hidden() {
 	LINES=0
-	PROMPT="Enter_SSID"
 	WIDTH=35
+	PROMPT="Enter_SSID"
 	SSID=$(rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
 		-theme "$RASI_DIR" -theme-str '
 		window{width: '"$((WIDTH / 2))"'em;}
@@ -235,6 +247,7 @@ function ssid_hidden() {
 function status() {
 	LINES=0
 	WIDTH=0
+	OPTIONS=""
 	for i in "${!WIRELESS_INTERFACES[@]}"; do
 		WIFI_CON_STATE=$(nmcli device status | grep "^${WIRELESS_INTERFACES[i]}." | awk '{print $3}')
 		WIFI_INT_NAME=${WLAN_STATUS[*]}${WIRELESS_INTERFACES_PRODUCT[$i]}[${WIRELESS_INTERFACES[$i]}]
@@ -265,7 +278,7 @@ function status() {
 	[[ $WIDTH -le 25 ]] && WIDTH=35
 	OPTIONS="$ETH_STATUS\n${WLAN_STATUS[*]}"
 	ACTIVE_VPN=$(nmcli -g NAME,TYPE con show --active | awk '/:vpn/' | sed 's/:vpn.*//g')
-	[[ -n $ACTIVE_VPN ]] && OPTIONS="${OPTIONS}\n${ACTIVE_VPN}[VPN]:\t$(nmcli -g ip4.address con show "${ACTIVE_VPN}" | awk -F '[:/]' '{print $1}')" && ((LINES += 1))
+	[[ -n $ACTIVE_VPN ]] && OPTIONS="${OPTIONS}\n${ACTIVE_VPN}[VPN]: $(nmcli -g ip4.address con show "${ACTIVE_VPN}" | awk -F '[:/]' '{print $1}')" && ((LINES += 1))
 	echo -e "$OPTIONS" |
 		rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
 			-theme "$RASI_DIR" -theme-str '
@@ -275,9 +288,12 @@ function status() {
 }
 function share_pass() {
 	LINES=$(nmcli dev wifi show-password | grep -c -e SSID: -e Password:)
-	((LINES += 1))
+	[[ -x "$(command -v qrencode)" ]] && {
+		QRCODE="\n~QrCode"
+		((LINES += 1))
+	} || QRCODE=""
 	WIDTH=35
-	SELECTION=$(echo -e "$(nmcli dev wifi show-password | grep -e SSID: -e Password:)\n~QrCode" |
+	SELECTION=$(echo -e "$(nmcli dev wifi show-password | grep -e SSID: -e Password:)$QRCODE" |
 		rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -a "$((LINES - 1))" \
 			-theme "$RASI_DIR" -theme-str '
 			window{width: '"$((WIDTH / 2))"'em;
@@ -354,6 +370,7 @@ function vpn() {
 function more_options() {
 	LINES=2
 	WIDTH=35
+	OPTIONS=""
 	[[ "$WIFI_CON_STATE" == "connected" ]] && OPTIONS="~Share Wifi Password\n" && ((LINES += 1))
 	OPTIONS="${OPTIONS}~Status\n~Restart Network"
 	[[ $(nmcli -g NAME,TYPE connection | awk '/:vpn/' | sed 's/:vpn.*//g') ]] && OPTIONS="${OPTIONS}\n~VPN" && ((LINES += 1))
