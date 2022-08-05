@@ -15,14 +15,14 @@ Inspired from [rofi-wifi-menu](https://github.com/zbaylin/rofi-wifi-menu).
 
 ### Requirements
 
-- [NetworkManager] (_nmcli_)
-- [rofi](https://github.com/davatorium/rofi)
-- [Notification Daemon](_Optional_) (_For notifications_)
+- **NetworkManager** (_nmcli_)
+- [**rofi**](https://github.com/davatorium/rofi)
+- **Notification Daemon** (_Optional_) (_For notifications_)
   - [notify-osd](https://launchpad.net/notify-osd)
   - [dunst](https://github.com/dunst-project/dunst)
   - [fnott](https://codeberg.org/dnkl/fnott)
-- [nm-connection-editor](_Optional_) (_For editing connections_)
-- [qrencode](https://fukuchi.org/works/qrencode) (_Optional_) (_For sharing wifi with qrcode_)
+- **nm-connection-editor** (_Optional_) (_For editing connections_)
+- [**qrencode**](https://fukuchi.org/works/qrencode) (_Optional_) (_For sharing wifi with qrcode_)
 
 ### Features
 
