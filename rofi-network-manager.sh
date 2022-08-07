@@ -33,12 +33,12 @@ function wireless_interface_state() {
 	ACTIVE_SSID=$(nmcli device status | grep "^${WIRELESS_INTERFACES[WLAN_INT]}." | awk '{print $4}')
 	WIFI_CON_STATE=$(nmcli device status | grep "^${WIRELESS_INTERFACES[WLAN_INT]}." | awk '{print $3}')
 	if [[ "$WIFI_CON_STATE" =~ "unavailable" ]]; then
-		WIFI_LIST="   ***Wi-Fi Disabled***"
+		WIFI_LIST="***Wi-Fi Disabled***"
 		WIFI_SWITCH="~Wi-Fi On"
 		OPTIONS="${OPTIONS}${WIFI_LIST}\n${WIFI_SWITCH}\n~Scan"
 		((LINES += 3))
 	elif [[ "$WIFI_CON_STATE" =~ "connected" ]]; then
-		WIFI_LIST=$(nmcli --fields IN-USE,SSID,SECURITY,BARS device wifi list ifname "${WIRELESS_INTERFACES[WLAN_INT]}" | awk -F'  +' '{ if (!seen[$2]++) print}' | sed "s/^IN-USE\s//g" | sed "/--/d" | sed "/*/d" | sed "s/^ *//")
+		WIFI_LIST=$(nmcli --fields IN-USE,SSID,SECURITY,BARS device wifi list ifname "${WIRELESS_INTERFACES[WLAN_INT]}" | awk -F'  +' '{ if (!seen[$2]++) print}' | sed "s/^IN-USE\s//g" | sed "/*/d" | sed "s/^ *//")
 		LINES=$(echo -e "$WIFI_LIST" | wc -l)
 		if [[ "$ACTIVE_SSID" == "--" ]]; then
 			WIFI_SWITCH="~Scan\n~Manual/Hidden\n~Wi-Fi Off"
@@ -58,9 +58,9 @@ function ethernet_interface_state() {
 	elif [[ "$WIRE_CON_STATE" == "connected" ]]; then
 		WIRE_SWITCH="~Eth Off"
 	elif [[ "$WIRE_CON_STATE" == "unavailable" ]]; then
-		WIRE_SWITCH=" ***Wired Unavailable***"
+		WIRE_SWITCH="***Wired Unavailable***"
 	elif [[ "$WIRE_CON_STATE" == "connecting" ]]; then
-		WIRE_SWITCH=" **Wired Initializing**"
+		WIRE_SWITCH="***Wired Initializing***"
 	fi
 	((LINES += 1))
 	OPTIONS="${OPTIONS}\n${WIRE_SWITCH}"
@@ -69,43 +69,40 @@ function rofi_menu() {
 	[[ $LINES -eq 0 ]] && notification "Initialization" "Some connections are being set up.Please try again later." && exit
 	((WIDTH += WIDTH_FIX_MAIN))
 	PROMPT=${WIRELESS_INTERFACES_PRODUCT[WLAN_INT]}[${WIRELESS_INTERFACES[WLAN_INT]}]
-	if [[ $(nmcli device | awk '$2=="wifi" {print $1}' | wc -l) -ne "1" ]]; then
+	if [[ ${#WIRELESS_INTERFACES[@]} -ne "1" ]]; then
 		OPTIONS="${OPTIONS}\n~Change Wifi Interface\n~More Options"
 		((LINES += 2))
-		SELECTION=$(echo -e "$OPTIONS" |
-			rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -a "0" \
-				-theme "$RASI_DIR" -theme-str '
-				window{width: '"$((WIDTH / 2))"'em;}
-				listview{lines: '"$LINES"';}
-				textbox-prompt-colon{str:"'"$PROMPT"':";}')
 	else
 		OPTIONS="${OPTIONS}\n~More Options"
 		((LINES += 1))
-		SELECTION=$(echo -e "$OPTIONS" |
-			rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -a "0" \
-				-theme "$RASI_DIR" -theme-str '
-				window{width: '"$((WIDTH / 2))"'em;}
-				listview{lines: '"$LINES"';}
-				textbox-prompt-colon{str:"'"$PROMPT"':";}')
 	fi
+	SELECTION=$(echo -e "$OPTIONS" | rofi_cmd "-a 0")
 	SSID_SELECTION=$(echo "$SELECTION" | sed "s/\s\{2,\}/\|/g" | awk -F "|" '{print $1}')
 	selection_action
 }
-function change_wireless_interface() {
-	PROMPT=">_"
-	if [[ $(nmcli device | awk '$2=="wifi" {print $1}' | wc -l) -eq "2" ]]; then
-		[[ $WLAN_INT -eq "0" ]] && WLAN_INT=1 || WLAN_INT=0
-	else
-		for i in "${!WIRELESS_INTERFACES[@]}"; do
-			LIST_WLAN_INT=("${LIST_WLAN_INT[@]}${WIRELESS_INTERFACES_PRODUCT[$i]}[${WIRELESS_INTERFACES[$i]}]\n")
-		done
-		LINES=$(nmcli device | awk '$2=="wifi" {print $1}' | wc -l)
-		CHANGE_WLAN_INT=$(echo -e "${LIST_WLAN_INT[@]}" |
-			rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
-				-theme "$RASI_DIR" -theme-str '
+function rofi_cmd() {
+	rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" $1 \
+		-theme "$RASI_DIR" -theme-str '
 				window{width: '"$((WIDTH / 2))"'em;}
 				listview{lines: '"$LINES"';}
-				textbox-prompt-colon{str:"'"$PROMPT"':";}')
+				textbox-prompt-colon{str:"'"$PROMPT"':";}'
+}
+function change_wireless_interface() {
+	LINES=${#WIRELESS_INTERFACES[@]}
+	WIDTH=35
+	PROMPT=">_"
+	if [[ ${#WIRELESS_INTERFACES[@]} -eq "2" ]]; then
+		[[ $WLAN_INT -eq "0" ]] && WLAN_INT=1 || WLAN_INT=0
+	else
+		LIST_WLAN_INT=""
+		for i in "${!WIRELESS_INTERFACES[@]}"; do
+			ENTRY="${WIRELESS_INTERFACES_PRODUCT[$i]}[${WIRELESS_INTERFACES[$i]}]"
+			WIDTH_TEMP=$(echo "$ENTRY" | awk '{print length($0);}')
+			[[ $WIDTH_TEMP -gt $WIDTH ]] && WIDTH=$WIDTH_TEMP
+			LIST_WLAN_INT=("${LIST_WLAN_INT[@]}${ENTRY}\n")
+		done
+		LIST_WLAN_INT[-1]=${LIST_WLAN_INT[-1]::-2}
+		CHANGE_WLAN_INT=$(echo -e "${LIST_WLAN_INT[@]}" | rofi_cmd)
 		for i in "${!WIRELESS_INTERFACES[@]}"; do
 			[[ $CHANGE_WLAN_INT == "${WIRELESS_INTERFACES_PRODUCT[$i]}[${WIRELESS_INTERFACES[$i]}]" ]] && WLAN_INT=$i && break
 		done
@@ -117,7 +114,7 @@ function change_wireless_interface() {
 function scan() {
 	[[ "$WIFI_CON_STATE" =~ "unavailable" ]] && change_wifi_state "Wi-Fi" "Enabling Wi-Fi connection" "on" && sleep 2
 	notification "-t 0 Wifi" "Please Wait Scanning"
-	WIFI_LIST=$(nmcli --fields IN-USE,SSID,SECURITY,BARS device wifi list ifname "${WIRELESS_INTERFACES[WLAN_INT]}" --rescan yes | awk -F'  +' '{ if (!seen[$2]++) print}' | sed "s/^IN-USE\s//g" | sed "/--/d" | sed "/*/d" | sed "s/^ *//")
+	WIFI_LIST=$(nmcli --fields IN-USE,SSID,SECURITY,BARS device wifi list ifname "${WIRELESS_INTERFACES[WLAN_INT]}" --rescan yes | awk -F'  +' '{ if (!seen[$2]++) print}' | sed "s/^IN-USE\s//g" | sed "/*/d" | sed "s/^ *//")
 	wireless_interface_state
 	ethernet_interface_state
 	notification "-t 1 Wifi" "Please Wait Scanning"
@@ -167,22 +164,13 @@ function ssid_manual() {
 	LINES=0
 	WIDTH=35
 	PROMPT="Enter_SSID"
-	SSID=$(rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
-		-theme "$RASI_DIR" -theme-str '
-		window{width: '"$((WIDTH / 2))"'em;}
-		listview{lines: '"$LINES"';}
-		textbox-prompt-colon{str:"'"$PROMPT"':";}')
+	SSID=$(rofi_cmd)
 	[[ -n $SSID ]] && {
 		LINES=1
 		WIDTH=$(echo "$PASSWORD_ENTER" | awk '{print length($0);}')
 		((WIDTH += WIDTH_FIX_MAIN))
 		PROMPT="Enter_Password"
-		PASS=$(echo "$PASSWORD_ENTER" |
-			rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -password \
-				-theme "$RASI_DIR" -theme-str '
-				window{width: '"$((WIDTH / 2))"'em;}
-				listview{lines: '"$LINES"';}
-				textbox-prompt-colon{str:"'"$PROMPT"':";}')
+		PASS=$(echo "$PASSWORD_ENTER" | rofi_cmd "-password")
 		if [[ -n "$PASS" ]]; then
 			if [[ "$PASS" =~ $PASSWORD_ENTER ]]; then
 				stored_connection "$SSID"
@@ -198,23 +186,13 @@ function ssid_hidden() {
 	LINES=0
 	WIDTH=35
 	PROMPT="Enter_SSID"
-	SSID=$(rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
-		-theme "$RASI_DIR" -theme-str '
-		window{width: '"$((WIDTH / 2))"'em;}
-		listview{lines: '"$LINES"';}
-		textbox-prompt-colon{str:"'"$PROMPT"':";}')
+	SSID=$(rofi_cmd)
 	[[ -n $SSID ]] && {
 		LINES=1
 		WIDTH=$(echo "$PASSWORD_ENTER" | awk '{print length($0);}')
 		((WIDTH += WIDTH_FIX_MAIN))
 		PROMPT="Enter_Password"
-		PASS=$(echo "$PASSWORD_ENTER" |
-			rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
-				-password -theme "$RASI_DIR" -theme-str '
-				window{width: '"$((WIDTH / 2))"'em;}
-				listview{lines: '"$LINES"';}
-				textbox-prompt-colon{str:"'"$PROMPT"':";}
-				')
+		PASS=$(echo "$PASSWORD_ENTER" | rofi_cmd "-password")
 		if [[ -n "$PASS" ]]; then
 			if [[ "$PASS" =~ $PASSWORD_ENTER ]]; then
 				check_wifi_connected
@@ -247,6 +225,7 @@ function ssid_hidden() {
 function status() {
 	LINES=0
 	WIDTH=0
+	PROMPT="Status"
 	OPTIONS=""
 	for i in "${!WIRELESS_INTERFACES[@]}"; do
 		WIFI_CON_STATE=$(nmcli device status | grep "^${WIRELESS_INTERFACES[i]}." | awk '{print $3}')
@@ -279,12 +258,7 @@ function status() {
 	OPTIONS="$ETH_STATUS\n${WLAN_STATUS[*]}"
 	ACTIVE_VPN=$(nmcli -g NAME,TYPE con show --active | awk '/:vpn/' | sed 's/:vpn.*//g')
 	[[ -n $ACTIVE_VPN ]] && OPTIONS="${OPTIONS}\n${ACTIVE_VPN}[VPN]: $(nmcli -g ip4.address con show "${ACTIVE_VPN}" | awk -F '[:/]' '{print $1}')" && ((LINES += 1))
-	echo -e "$OPTIONS" |
-		rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
-			-theme "$RASI_DIR" -theme-str '
-			window{width: '"$((WIDTH / 2))"'em;
-			children: [listview];}
-			listview{lines: '"$LINES"';}'
+	echo -e "$OPTIONS" | rofi_cmd
 }
 function share_pass() {
 	LINES=$(nmcli dev wifi show-password | grep -c -e SSID: -e Password:)
@@ -293,12 +267,7 @@ function share_pass() {
 		((LINES += 1))
 	} || QRCODE=""
 	WIDTH=35
-	SELECTION=$(echo -e "$(nmcli dev wifi show-password | grep -e SSID: -e Password:)$QRCODE" |
-		rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -a "$((LINES - 1))" \
-			-theme "$RASI_DIR" -theme-str '
-			window{width: '"$((WIDTH / 2))"'em;
-			children: [listview];}
-			listview{lines: '"$LINES"';}')
+	SELECTION=$(echo -e "$(nmcli dev wifi show-password | grep -e SSID: -e Password:)$QRCODE" | rofi_cmd "-a "$((LINES - 1))"")
 	selection_action
 }
 function gen_qrcode() {
@@ -324,13 +293,7 @@ function gen_qrcode() {
 function manual_hidden() {
 	LINES=2
 	WIDTH=35
-	SELECTION=$(echo -e "~Manual\n~Hidden" |
-		rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
-			-theme "$RASI_DIR" -theme-str '
-			window{
-				width: '"$((WIDTH / 2))"'em;
-				children: [listview];}
-			listview{lines: '"$LINES"';}')
+	SELECTION=$(echo -e "~Manual\n~Hidden" | rofi_cmd)
 	selection_action
 }
 function vpn() {
@@ -339,23 +302,13 @@ function vpn() {
 	if [[ $ACTIVE_VPN ]]; then
 		PROMPT="$ACTIVE_VPN"
 		LINES=1
-		VPN_ACTION=$(echo -e "~Deactive VPN" |
-			rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
-				-theme "$RASI_DIR" -theme-str '
-				window{width: '"$((WIDTH / 2))"'em;}
-				listview{lines: '"$LINES"';}
-				textbox-prompt-colon{str:"'"$PROMPT"':";}')
+		VPN_ACTION=$(echo -e "~Deactive VPN" | rofi_cmd "-a 0")
 		[[ "$VPN_ACTION" =~ "~Deactive VPN" ]] && nmcli connection down "$ACTIVE_VPN" && notification "VPN_Deactivated" "$ACTIVE_VPN"
 	else
 		PROMPT="VPN"
 		VPN_LIST=$(nmcli -g NAME,TYPE connection | awk '/:vpn/' | sed 's/:vpn.*//g')
 		LINES=$(nmcli -g NAME,TYPE connection | awk '/:vpn/' | sed 's/:vpn.*//g' | wc -l)
-		VPN_ACTION=$(echo -e "$VPN_LIST" |
-			rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
-				-theme "$RASI_DIR" -theme-str '
-				window{width: '"$((WIDTH / 2))"'em;}
-				listview{lines: '"$LINES"';}
-				textbox-prompt-colon{str:"'"$PROMPT"':";}')
+		VPN_ACTION=$(echo -e "$VPN_LIST" | rofi_cmd)
 		[[ -n "$VPN_ACTION" ]] && {
 			VPN_OUTPUT=$(nmcli connection up "$VPN_ACTION" 2>/dev/null)
 			notification "-t 0 Activating_VPN" "$VPN_ACTION"
@@ -375,13 +328,7 @@ function more_options() {
 	OPTIONS="${OPTIONS}~Status\n~Restart Network"
 	[[ $(nmcli -g NAME,TYPE connection | awk '/:vpn/' | sed 's/:vpn.*//g') ]] && OPTIONS="${OPTIONS}\n~VPN" && ((LINES += 1))
 	[[ -x "$(command -v nm-connection-editor)" ]] && OPTIONS="${OPTIONS}\n~Open Connection Editor" && ((LINES += 1))
-	SELECTION=$(echo -e "$OPTIONS" |
-		rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" \
-			-theme "$RASI_DIR" -theme-str '
-			window{
-				width: '"$((WIDTH / 2))"'em;
-				children: [listview];}
-			listview{lines: '"$LINES"';}')
+	SELECTION=$(echo -e "$OPTIONS" | rofi_cmd)
 	selection_action
 }
 function selection_action() {
@@ -397,9 +344,9 @@ function selection_action() {
 	"~Wi-Fi Off") change_wifi_state "Wi-Fi" "Disabling Wi-Fi connection" "off" ;;
 	"~Eth Off") change_wire_state "Ethernet" "Disabling Wired connection" "down" ;;
 	"~Eth On") change_wire_state "Ethernet" "Enabling Wired connection" "up" ;;
-	"   ***Wi-Fi Disabled***   ") ;;
-	" ***Wired Unavailable***") ;;
-	" **Wired Initializing**") ;;
+	"***Wi-Fi Disabled***") ;;
+	"***Wired Unavailable***") ;;
+	"***Wired Initializing***") ;;
 	"~Change Wifi Interface") change_wireless_interface ;;
 	"~Restart Network") net_restart "Network" "Restarting Network" ;;
 	"~QrCode") gen_qrcode ;;
@@ -417,11 +364,7 @@ function selection_action() {
 				nmcli con up "$SSID_SELECTION" ifname "${WIRELESS_INTERFACES[WLAN_INT]}"
 			else
 				[[ "$SELECTION" =~ "WPA2" ]] || [[ "$SELECTION" =~ "WEP" ]] && {
-					PASS=$(echo "$PASSWORD_ENTER" | rofi -dmenu -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" -password \
-						-theme "$RASI_DIR" -theme-str '
-							window{width: '"$((WIDTH / 2))"'em;}
-							listview{lines: '"$LINES"';}
-							textbox-prompt-colon{str:"'"$PROMPT"':";}')
+					PASS=$(echo "$PASSWORD_ENTER" | rofi_cmd "-password")
 				}
 				if [[ -n "$PASS" ]]; then
 					if [[ "$PASS" =~ $PASSWORD_ENTER ]]; then
