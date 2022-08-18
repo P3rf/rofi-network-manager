@@ -66,7 +66,8 @@ function rofi_cmd() {
 		-theme "$RASI_DIR" -theme-str '
 		window{width: '"$((WIDTH / 2))"'em;}
 		listview{lines: '"$LINES"';}
-		textbox-prompt-colon{str:"'"$PROMPT"':";}'
+		textbox-prompt-colon{str:"'"$PROMPT"':";}
+		'"$2"''
 }
 function change_wireless_interface() {
 	LINES=${#WIRELESS_INTERFACES[@]}
@@ -172,7 +173,6 @@ function ssid_hidden() {
 function status() {
 	LINES=0
 	WIDTH=0
-	PROMPT="Status"
 	OPTIONS=""
 	for i in "${!WIRELESS_INTERFACES[@]}"; do
 		WIFI_CON_STATE=$(nmcli device status | grep "^${WIRELESS_INTERFACES[i]}." | awk '{print $3}')
@@ -205,7 +205,7 @@ function status() {
 	OPTIONS="$ETH_STATUS\n${WLAN_STATUS[*]}"
 	ACTIVE_VPN=$(nmcli -g NAME,TYPE con show --active | awk '/:vpn/' | sed 's/:vpn.*//g')
 	[[ -n $ACTIVE_VPN ]] && OPTIONS="${OPTIONS}\n${ACTIVE_VPN}[VPN]: $(nmcli -g ip4.address con show "${ACTIVE_VPN}" | awk -F '[:/]' '{print $1}')" && ((LINES += 1))
-	echo -e "$OPTIONS" | rofi_cmd
+	echo -e "$OPTIONS" | rofi_cmd "" "mainbox {children:[listview];}"
 }
 function share_pass() {
 	LINES=$(nmcli dev wifi show-password | grep -c -e SSID: -e Password:)
@@ -214,7 +214,7 @@ function share_pass() {
 		((LINES += 1))
 	} || QRCODE=""
 	WIDTH=35
-	SELECTION=$(echo -e "$(nmcli dev wifi show-password | grep -e SSID: -e Password:)$QRCODE" | rofi_cmd "-a "$((LINES - 1))"")
+	SELECTION=$(echo -e "$(nmcli dev wifi show-password | grep -e SSID: -e Password:)$QRCODE" | rofi_cmd "-a "$((LINES - 1))"" "mainbox {children:[listview];}")
 	selection_action
 }
 function gen_qrcode() {
@@ -240,22 +240,21 @@ function gen_qrcode() {
 function manual_hidden() {
 	LINES=2
 	WIDTH=35
-	SELECTION=$(echo -e "~Manual\n~Hidden" | rofi_cmd)
+	SELECTION=$(echo -e "~Manual\n~Hidden" | rofi_cmd "" "mainbox {children:[listview];}")
 	selection_action
 }
 function vpn() {
 	ACTIVE_VPN=$(nmcli -g NAME,TYPE con show --active | awk '/:vpn/' | sed 's/:vpn.*//g')
 	WIDTH=35
-	PROMPT="VPN"
 	if [[ $ACTIVE_VPN ]]; then
 		PROMPT="$ACTIVE_VPN"
 		LINES=1
-		VPN_ACTION=$(echo -e "~Deactive VPN" | rofi_cmd "-a 0")
-		[[ "$VPN_ACTION" =~ "~Deactive VPN" ]] && nmcli connection down "$ACTIVE_VPN" && notification "VPN_Deactivated" "$ACTIVE_VPN"
+		VPN_ACTION=$(echo -e "~Deactive $ACTIVE_VPN" | rofi_cmd "-a 0" "mainbox {children:[listview];}")
+		[[ "$VPN_ACTION" =~ "~Deactive" ]] && nmcli connection down "$ACTIVE_VPN" && notification "VPN_Deactivated" "$ACTIVE_VPN"
 	else
 		VPN_LIST=$(nmcli -g NAME,TYPE connection | awk '/:vpn/' | sed 's/:vpn.*//g')
 		LINES=$(nmcli -g NAME,TYPE connection | awk '/:vpn/' | sed 's/:vpn.*//g' | wc -l)
-		VPN_ACTION=$(echo -e "$VPN_LIST" | rofi_cmd)
+		VPN_ACTION=$(echo -e "$VPN_LIST" | rofi_cmd "" "mainbox {children:[listview];}")
 		[[ -n "$VPN_ACTION" ]] && {
 			VPN_OUTPUT=$(nmcli connection up "$VPN_ACTION" 2>/dev/null)
 			notification "-t 0 Activating_VPN" "$VPN_ACTION"
@@ -271,7 +270,7 @@ function more_options() {
 	OPTIONS="${OPTIONS}~Status\n~Restart Network"
 	[[ $(nmcli -g NAME,TYPE connection | awk '/:vpn/' | sed 's/:vpn.*//g') ]] && OPTIONS="${OPTIONS}\n~VPN" && ((LINES += 1))
 	[[ -x "$(command -v nm-connection-editor)" ]] && OPTIONS="${OPTIONS}\n~Open Connection Editor" && ((LINES += 1))
-	SELECTION=$(echo -e "$OPTIONS" | rofi_cmd)
+	SELECTION=$(echo -e "$OPTIONS" | rofi_cmd "" "mainbox {children:[listview];}")
 	selection_action
 }
 function selection_action() {
