@@ -24,7 +24,7 @@ function initialization() {
 	ethernet_interface_state
 }
 function notification() {
-	[[ "$NOTIFICATIONS_INIT" == "on" && -x "$(command -v nm-connection-editor)" ]] && notify-send -r "5" -u "normal" $1 "$2"
+	[[ "$NOTIFICATIONS_INIT" == "on" && -x "$(command -v notify-send)" ]] && notify-send -r "5" -u "normal" $1 "$2"
 }
 function wireless_interface_state() {
 	LINES=0
