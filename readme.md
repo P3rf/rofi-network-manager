@@ -68,7 +68,7 @@ X_AXIS=0
 NOTIFICATIONS_INIT="off"
 #Location of qrcode wifi image
 QRCODE_DIR="/tmp/"
-# WIDTH_FIX/WIDTH_FIX_STATUS needs to be increased or decreased , if the text
+# WIDTH_FIX_MAIN/WIDTH_FIX_STATUS needs to be increased or decreased , if the text
 # doesn't fit or it has too much space at the end when you launch rofi-network-manager.
 #It depends on the font type and size.
 WIDTH_FIX_MAIN=1
