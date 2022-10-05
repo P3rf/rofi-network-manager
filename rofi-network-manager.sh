@@ -48,7 +48,7 @@ function rofi_menu() {
 	selection_action
 }
 function dimensions() {
-	WIDTH=$(echo -e "$1" | awk '{print length}' | sort -n | tail -1) && ((WIDTH += $2)) && LINES=$(echo -e "$1" | wc -l)
+	{ [[ "${1}" != "" ]] && WIDTH=$(echo -e "$1" | awk '{print length}' | sort -n | tail -1) && ((WIDTH += $2)) && LINES=$(echo -e "$1" | wc -l); } || { WIDTH=$2 && LINES=0; }
 }
 function rofi_cmd() {
 	dimensions "$1" $2
@@ -62,12 +62,7 @@ function rofi_cmd() {
 function change_wireless_interface() {
 	{ [[ ${#WIRELESS_INTERFACES[@]} -eq "2" ]] && { [[ $WLAN_INT -eq "0" ]] && WLAN_INT=1 || WLAN_INT=0; }; } || {
 		LIST_WLAN_INT=""
-		for i in "${!WIRELESS_INTERFACES[@]}"; do
-			ENTRY="${WIRELESS_INTERFACES_PRODUCT[$i]}[${WIRELESS_INTERFACES[$i]}]"
-			WIDTH_TEMP=$(echo "$ENTRY" | awk '{print length($0);}')
-			[[ $WIDTH_TEMP -gt $WIDTH ]] && WIDTH=$WIDTH_TEMP
-			LIST_WLAN_INT=("${LIST_WLAN_INT[@]}${ENTRY}\n")
-		done
+		for i in "${!WIRELESS_INTERFACES[@]}"; do LIST_WLAN_INT=("${LIST_WLAN_INT[@]}${WIRELESS_INTERFACES_PRODUCT[$i]}[${WIRELESS_INTERFACES[$i]}]\n"); done
 		LIST_WLAN_INT[-1]=${LIST_WLAN_INT[-1]::-2}
 		CHANGE_WLAN_INT=$(echo -e "${LIST_WLAN_INT[@]}" | rofi_cmd "${LIST_WLAN_INT[@]}" $WIDTH_FIX_STATUS)
 		for i in "${!WIRELESS_INTERFACES[@]}"; do [[ $CHANGE_WLAN_INT == "${WIRELESS_INTERFACES_PRODUCT[$i]}[${WIRELESS_INTERFACES[$i]}]" ]] && WLAN_INT=$i && break; done
@@ -84,13 +79,16 @@ function scan() {
 	rofi_menu
 }
 function change_wifi_state() {
-	notification "$1" "$2" && nmcli radio wifi "$3"
+	notification "$1" "$2"
+	nmcli radio wifi "$3"
 }
 function change_wired_state() {
-	notification "$1" "$2" && nmcli device "$3" "$4"
+	notification "$1" "$2"
+	nmcli device "$3" "$4"
 }
 function net_restart() {
-	notification "$1" "$2" && nmcli networking off && sleep 3 && nmcli networking on
+	notification "$1" "$2"
+	nmcli networking off && sleep 3 && nmcli networking on
 }
 function disconnect() {
 	ACTIVE_SSID=$(nmcli -t -f GENERAL.CONNECTION dev show "${WIRELESS_INTERFACES[WLAN_INT]}" | cut -d ':' -f2)
@@ -101,17 +99,19 @@ function check_wifi_connected() {
 	[[ "$(nmcli device status | grep "^${WIRELESS_INTERFACES[WLAN_INT]}." | awk '{print $3}')" == "connected" ]] && disconnect "Connection_Terminated"
 }
 function connect() {
-	check_wifi_connected && notification "-t 0 Wi-Fi" "Connecting to $1"
+	check_wifi_connected
+	notification "-t 0 Wi-Fi" "Connecting to $1"
 	{ [[ $(nmcli dev wifi con "$1" password "$2" ifname "${WIRELESS_INTERFACES[WLAN_INT]}" | grep -c "successfully activated") -eq "1" ]] && notification "Connection_Established" "You're now connected to Wi-Fi network '$1'"; } || notification "Connection_Error" "Connection can not be established"
 }
 function enter_passwword() {
 	PROMPT="Enter_Password" && PASS=$(echo "$PASSWORD_ENTER" | rofi_cmd "$PASSWORD_ENTER" 4 "-password")
 }
 function enter_ssid() {
-	PROMPT="Enter_SSID" && SSID=$(rofi_cmd "$PASSWORD_ENTER" 4)
+	PROMPT="Enter_SSID" && SSID=$(rofi_cmd "" 40)
 }
 function stored_connection() {
-	check_wifi_connected && notification "-t 0 Wi-Fi" "Connecting to $1"
+	check_wifi_connected
+	notification "-t 0 Wi-Fi" "Connecting to $1"
 	{ [[ $(nmcli dev wifi con "$1" ifname "${WIRELESS_INTERFACES[WLAN_INT]}" | grep -c "successfully activated") -eq "1" ]] && notification "Connection_Established" "You're now connected to Wi-Fi network '$1'"; } || notification "Connection_Error" "Connection can not be established"
 }
 function ssid_manual() {
@@ -185,7 +185,7 @@ function manual_hidden() {
 }
 function vpn() {
 	ACTIVE_VPN=$(nmcli -g NAME,TYPE con show --active | awk '/:vpn/' | sed 's/:vpn.*//g')
-	[[ $ACTIVE_VPN ]] && OPTIONS="~Deactive $ACTIVE_VPN" || OPTIONS=$(nmcli -g NAME,TYPE connection | awk '/:vpn/' | sed 's/:vpn.*//g')
+	[[ $ACTIVE_VPN ]] && OPTIONS="~Deactive $ACTIVE_VPN" || OPTIONS="$(nmcli -g NAME,TYPE connection | awk '/:vpn/' | sed 's/:vpn.*//g')"
 	VPN_ACTION=$(echo -e "$OPTIONS" | rofi_cmd "$OPTIONS" "$WIDTH_FIX_STATUS" "" "mainbox {children:[listview];}")
 	[[ -n "$VPN_ACTION" ]] && { { [[ "$VPN_ACTION" =~ "~Deactive" ]] && nmcli connection down "$ACTIVE_VPN" && notification "VPN_Deactivated" "$ACTIVE_VPN"; } || {
 		notification "-t 0 Activating_VPN" "$VPN_ACTION" && VPN_OUTPUT=$(nmcli connection up "$VPN_ACTION" 2>/dev/null)
