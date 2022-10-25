@@ -52,11 +52,11 @@ textbox {
 	text-color: @foreground;
 }
 listview {
-	spacing:      	4px;
-	lines:			0;
-	fixed-height: 	0;
-	border: 		0;
-	scrollbar: 		false;
+	spacing:		4px;
+	dynamic:		true;
+	fixed-height:	false;
+	border:			0;
+	scrollbar:		false;
 	text-color:		@separatorcolor;
 }
 element {
