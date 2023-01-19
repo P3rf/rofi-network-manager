@@ -27,7 +27,7 @@ configuration {
 	selected-active-foreground:  	@background-selection;
 	alternate-normal-foreground: 	@foreground;
 	alternate-active-background: 	@background;
-	bordercolor:                 	@background;
+	border-color:                 	@background;
 	normal-background:           	@transparent;
 	selected-normal-background:  	@background-selection;
 	separatorcolor:              	@accent;
