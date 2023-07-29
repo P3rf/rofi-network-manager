@@ -164,8 +164,8 @@ function status() {
 	echo -e "$OPTIONS" | rofi_cmd "$OPTIONS" $WIDTH_FIX_STATUS "" "mainbox{children:[listview];}"
 }
 function share_pass() {
-	SSID=$(nmcli dev wifi show-password | grep -oP '(?<=SSID: ).*' | head -1)
-	PASSWORD=$(nmcli dev wifi show-password | grep -oP '(?<=Password: ).*' | head -1)
+	SSID=$(nmcli dev wifi show-password | grep -i 'SSID:' | cut -d " " -f2)
+	PASSWORD=$(nmcli dev wifi show-password | grep -i 'Password:' | cut -d " " -f2)
 	OPTIONS="SSID: ${SSID}\nPassword: ${PASSWORD}"
 	[[ -x "$(command -v qrencode)" ]] && OPTIONS="${OPTIONS}\n~QrCode"
 	SELECTION=$(echo -e "$OPTIONS" | rofi_cmd "$OPTIONS" $WIDTH_FIX_STATUS "-a -1" "mainbox{children:[listview];}")
@@ -174,7 +174,7 @@ function share_pass() {
 function gen_qrcode() {
   DIRECTIONS=("Center" "Northwest" "North" "Northeast" "East" "Southeast" "South" "Southwest" "West")
   TMP_SSID="${SSID// /_}"
-	[[ -e $QRCODE_DIR$TMP_SSID.png ]] || qrencode -t png -o $QRCODE_DIR$TMP_SSID.png -l H -s 25 -m 2 --dpi=192 "WIFI:S:""$SSID"";T:""$(nmcli dev wifi show-password | grep -oP '(?<=Security: ).*' | head -1)"";P:""$PASSWORD"";;"
+	[[ -e $QRCODE_DIR$TMP_SSID.png ]] || qrencode -t png -o $QRCODE_DIR$TMP_SSID.png -l H -s 25 -m 2 --dpi=192 "WIFI:S:""$SSID"";T:""$(nmcli dev wifi show-password | grep -i 'Security:' | cut -d " " -f2)"";P:""$PASSWORD"";;"
   rofi_cmd "" "0" "" "entry{enabled:false;}window{location:""${DIRECTIONS[QRCODE_LOCATION]}"";border-radius:6mm;padding:1mm;width:100mm;height:100mm;
 	background-image:url(\"$QRCODE_DIR$TMP_SSID.png\",both);}"
 }
