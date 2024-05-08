@@ -23,6 +23,7 @@ SIGNAL_STRENGTH_2="12"
 SIGNAL_STRENGTH_3="123"
 SIGNAL_STRENGTH_4="1234"
 VPN_PATTERN='(wireguard|vpn)'
+
 function initialization() {
     source "${XDG_CONFIG_HOME:-$HOME/.config}/rofi-network-manager/conf.sh" ||
         source "${XDG_CONFIG_HOME:-$HOME/.config}/rofi/rofi-network-manager.conf" ||
@@ -53,6 +54,7 @@ function initialization() {
 function notification() {
     [[ "$NOTIFICATIONS" == "true" && -x "$(command -v notify-send)" ]] && notify-send -r "5" -u "normal" $1 "$2"
 }
+
 function wireless_interface_state() {
 
     [[ ${#WIRELESS_INTERFACES[@]} -eq "0" ]] || {
@@ -67,6 +69,7 @@ function wireless_interface_state() {
         }; }
     }
 }
+
 function ethernet_interface_state() {
     [[ ${#WIRED_INTERFACES[@]} -eq "0" ]] || {
         WIRED_CON_STATE=$(nmcli device status | grep "ethernet" | head -1 | awk '{print $3}')
@@ -74,17 +77,43 @@ function ethernet_interface_state() {
         OPTIONS="${OPTIONS}${WIRED_SWITCH}\n"
     }
 }
+
 function rofi_menu() {
-    { [[ ${#WIRELESS_INTERFACES[@]} -gt "1" ]] && OPTIONS="${OPTIONS}~Change Wifi Interface\n~More Options"; } || { OPTIONS="${OPTIONS}~More Options"; }
-    { [[ "$WIRED_CON_STATE" == "connected" ]] && PROMPT="${WIRED_INTERFACES_PRODUCT}[$WIRED_INTERFACES]"; } || PROMPT="${WIRELESS_INTERFACES_PRODUCT[WLAN_INT]}[${WIRELESS_INTERFACES[WLAN_INT]}]"
+    [[ "$WIFI_CON_STATE" == "connected" ]] && OPTIONS="${OPTIONS}~Share Wifi Password\n"
+    OPTIONS="${OPTIONS}~Status\n~Restart Network"
+    [[ $(nmcli -g NAME,TYPE connection | awk '/:'$VPN_PATTERN'/ {sub(/:'$VPN_PATTERN'.*/, ""); print}') ]] && OPTIONS="${OPTIONS}\n~VPN"
+    [[ -x "$(command -v nm-connection-editor)" ]] && OPTIONS="${OPTIONS}\n~Open Connection Editor\n"
+
+    {
+        [[ ${#WIRELESS_INTERFACES[@]} -gt "1" ]] &&
+            OPTIONS="${OPTIONS}~Change Wifi Interface\n~More Options"
+    }
+
+    {
+        [[ "$WIRED_CON_STATE" == "connected" ]] &&
+            PROMPT="${WIRED_INTERFACES_PRODUCT}[$WIRED_INTERFACES]"
+    } || PROMPT="${WIRELESS_INTERFACES_PRODUCT[WLAN_INT]}[${WIRELESS_INTERFACES[WLAN_INT]}]"
+
     SELECTION=$(echo -e "$OPTIONS" | rofi_cmd "$OPTIONS" $WIDTH_FIX_MAIN "-a 0")
+
     SSID=$(echo "$SELECTION" | sed "s/\s\{2,\}/\|/g" | awk -F "|" '{print $1}')
+
     selection_action
 }
+
 function rofi_cmd() {
     { [[ -n "${1}" ]] && WIDTH=$(echo -e "$1" | awk '{print length}' | sort -n | tail -1) && ((WIDTH += $2)) && ((WIDTH = WIDTH / 2)); } || { ((WIDTH = $2 / 2)); }
-    rofi -dmenu -i -location "$LOCATION" -yoffset "$Y_AXIS" -xoffset "$X_AXIS" $3 -theme "$RASI_DIR" -theme-str 'window{width: '"$WIDTH"'em;}textbox-prompt-colon{str:"'"$PROMPT"':";}'"$4"''
+
+    rofi \
+        -dmenu \
+        -i \
+        -location "$LOCATION" \
+        -yoffset "$Y_AXIS" \
+        -xoffset "$X_AXIS" $3 \
+        -theme "$RASI_DIR" \
+        -theme-str 'window{width: '"$WIDTH"'em;}textbox-prompt-colon{str:"'"$PROMPT"':";}'"$4"''
 }
+
 function change_wireless_interface() {
     { [[ ${#WIRELESS_INTERFACES[@]} -eq "2" ]] && { [[ $WLAN_INT -eq "0" ]] && WLAN_INT=1 || WLAN_INT=0; }; } || {
         LIST_WLAN_INT=""
@@ -96,6 +125,7 @@ function change_wireless_interface() {
     wireless_interface_state && ethernet_interface_state
     rofi_menu
 }
+
 function scan() {
     [[ "$WIFI_CON_STATE" =~ "unavailable" ]] && change_wifi_state "Wi-Fi" "Enabling Wi-Fi connection" "on" && sleep 2
     notification "-t 0 Wifi" "Please Wait Scanning"
@@ -105,47 +135,58 @@ function scan() {
     notification "-t 1 Wifi" "Please Wait Scanning"
     rofi_menu
 }
+
 function wifi_list() {
     WIFI_LIST=$(echo -e "$WIFI_LIST" | awk -F'  +' '{ if (!seen[$1]++) print}' | awk '$1!="--" {print}' | awk '$1 !~ "^'"${ACTIVE_SSID}"'"')
     [[ $ASCII_OUT == "true" ]] && WIFI_LIST=$(echo -e "$WIFI_LIST" | sed 's/\(..*\)\*\{4,4\}/\1▂▄▆█/g' | sed 's/\(..*\)\*\{3,3\}/\1▂▄▆_/g' | sed 's/\(..*\)\*\{2,2\}/\1▂▄__/g' | sed 's/\(..*\)\*\{1,1\}/\1▂___/g')
     [[ $CHANGE_BARS == "true" ]] && WIFI_LIST=$(echo -e "$WIFI_LIST" | sed 's/\(.*\)▂▄▆█/\1'$SIGNAL_STRENGTH_4'/' | sed 's/\(.*\)▂▄▆_/\1'$SIGNAL_STRENGTH_3'/' | sed 's/\(.*\)▂▄__/\1'$SIGNAL_STRENGTH_2'/' | sed 's/\(.*\)▂___/\1'$SIGNAL_STRENGTH_1'/' | sed 's/\(.*\)____/\1'$SIGNAL_STRENGTH_0'/')
 }
+
 function change_wifi_state() {
     notification "$1" "$2"
     nmcli radio wifi "$3"
 }
+
 function change_wired_state() {
     notification "$1" "$2"
     nmcli device "$3" "$4"
 }
+
 function net_restart() {
     notification "$1" "$2"
     nmcli networking off && sleep 3 && nmcli networking on
 }
+
 function disconnect() {
     ACTIVE_SSID=$(nmcli -t -f GENERAL.CONNECTION dev show "${WIRELESS_INTERFACES[WLAN_INT]}" | cut -d ':' -f2)
     notification "$1" "You're now disconnected from Wi-Fi network '$ACTIVE_SSID'"
     nmcli con down id "$ACTIVE_SSID"
 }
+
 function check_wifi_connected() {
     [[ "$(nmcli device status | grep "^${WIRELESS_INTERFACES[WLAN_INT]}." | awk '{print $3}')" == "connected" ]] && disconnect "Connection_Terminated"
 }
+
 function connect() {
     check_wifi_connected
     notification "-t 0 Wi-Fi" "Connecting to $1"
     { [[ $(nmcli dev wifi con "$1" password "$2" ifname "${WIRELESS_INTERFACES[WLAN_INT]}" | grep -c "successfully activated") -eq "1" ]] && notification "Connection_Established" "You're now connected to Wi-Fi network '$1'"; } || notification "Connection_Error" "Connection can not be established"
 }
+
 function enter_passwword() {
     PROMPT="Enter_Password" && PASS=$(echo "$PASSWORD_ENTER" | rofi_cmd "$PASSWORD_ENTER" 4 "-password")
 }
+
 function enter_ssid() {
     PROMPT="Enter_SSID" && SSID=$(rofi_cmd "" 40)
 }
+
 function stored_connection() {
     check_wifi_connected
     notification "-t 0 Wi-Fi" "Connecting to $1"
     { [[ $(nmcli dev wifi con "$1" ifname "${WIRELESS_INTERFACES[WLAN_INT]}" | grep -c "successfully activated") -eq "1" ]] && notification "Connection_Established" "You're now connected to Wi-Fi network '$1'"; } || notification "Connection_Error" "Connection can not be established"
 }
+
 function ssid_manual() {
     enter_ssid
     [[ -n $SSID ]] && {
@@ -153,6 +194,7 @@ function ssid_manual() {
         { [[ -n "$PASS" ]] && [[ "$PASS" != "$PASSWORD_ENTER" ]] && connect "$SSID" "$PASS"; } || stored_connection "$SSID"
     }
 }
+
 function ssid_hidden() {
     enter_ssid
     [[ -n $SSID ]] && {
@@ -166,6 +208,7 @@ function ssid_hidden() {
         { [[ $(nmcli con up id "$SSID" | grep -c "successfully activated") -eq "1" ]] && notification "Connection_Established" "You're now connected to Wi-Fi network '$SSID'"; } || notification "Connection_Error" "Connection can not be established"
     }
 }
+
 function interface_status() {
     local -n INTERFACES=$1 && local -n INTERFACES_PRODUCT=$2
     for i in "${!INTERFACES[@]}"; do
@@ -175,6 +218,7 @@ function interface_status() {
         echo -e "${STATUS}"
     done
 }
+
 function status() {
     OPTIONS=""
     [[ ${#WIRED_INTERFACES[@]} -ne "0" ]] && ETH_STATUS="$(interface_status WIRED_INTERFACES WIRED_INTERFACES_PRODUCT)" && OPTIONS="${OPTIONS}${ETH_STATUS}"
@@ -183,6 +227,7 @@ function status() {
     [[ -n $ACTIVE_VPN ]] && OPTIONS="${OPTIONS}\n${ACTIVE_VPN}[VPN]: $(nmcli -g ip4.address con show "${ACTIVE_VPN}" | awk -F '[:/]' '{print $1}')"
     echo -e "$OPTIONS" | rofi_cmd "$OPTIONS" $WIDTH_FIX_STATUS "" "mainbox{children:[listview];}"
 }
+
 function share_pass() {
     SSID=$(nmcli dev wifi show-password | grep -oP '(?<=SSID: ).*' | head -1)
     PASSWORD=$(nmcli dev wifi show-password | grep -oP '(?<=Password: ).*' | head -1)
@@ -191,6 +236,7 @@ function share_pass() {
     SELECTION=$(echo -e "$OPTIONS" | rofi_cmd "$OPTIONS" $WIDTH_FIX_STATUS "-a -1" "mainbox{children:[listview];}")
     selection_action
 }
+
 function gen_qrcode() {
     DIRECTIONS=("Center" "Northwest" "North" "Northeast" "East" "Southeast" "South" "Southwest" "West")
     TMP_SSID="${SSID// /_}"
@@ -198,10 +244,12 @@ function gen_qrcode() {
     rofi_cmd "" "0" "" "entry{enabled:false;}window{location:""${DIRECTIONS[QRCODE_LOCATION]}"";border-radius:6mm;padding:1mm;width:100mm;height:100mm;
 	background-image:url(\"$QRCODE_DIR$TMP_SSID.png\",both);}"
 }
+
 function manual_hidden() {
     OPTIONS="~Manual\n~Hidden" && SELECTION=$(echo -e "$OPTIONS" | rofi_cmd "$OPTIONS" $WIDTH_FIX_STATUS "" "mainbox{children:[listview];}")
     selection_action
 }
+
 function vpn() {
     ACTIVE_VPN=$(nmcli -g NAME,TYPE con show --active | awk '/:'$VPN_PATTERN'/ {sub(/:'$VPN_PATTERN'.*/, ""); print}')
     [[ $ACTIVE_VPN ]] && OPTIONS="~Deactive $ACTIVE_VPN" || OPTIONS="$(nmcli -g NAME,TYPE connection | awk '/:'$VPN_PATTERN'/ {sub(/:'$VPN_PATTERN'.*/, ""); print}')"
@@ -212,6 +260,7 @@ function vpn() {
         { [[ $(echo "$VPN_OUTPUT" | grep -c "Connection successfully activated") -eq "1" ]] && notification "VPN_Successfully_Activated" "$VPN_ACTION"; } || notification "Error_Activating_VPN" "Check your configuration for $VPN_ACTION"
     }; }
 }
+
 function more_options() {
     OPTIONS=""
     [[ "$WIFI_CON_STATE" == "connected" ]] && OPTIONS="~Share Wifi Password\n"
@@ -221,6 +270,7 @@ function more_options() {
     SELECTION=$(echo -e "$OPTIONS" | rofi_cmd "$OPTIONS" "$WIDTH_FIX_STATUS" "" "mainbox {children:[listview];}")
     selection_action
 }
+
 function selection_action() {
     case "$SELECTION" in
     "~Disconnect") disconnect "Connection_Terminated" ;;
