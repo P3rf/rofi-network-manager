@@ -293,6 +293,7 @@ function selection_action() {
     "~More Options") more_options ;;
     "~Open Connection Editor") nm-connection-editor ;;
     "~VPN") vpn ;;
+    "SSID  "*) initialization && rofi_menu ;;
     *)
         [[ -n "$SELECTION" ]] && [[ "$WIFI_LIST" =~ .*"$SELECTION".* ]] && {
             [[ "$SSID" == "*" ]] && SSID=$(echo "$SELECTION" | sed "s/\s\{2,\}/\|/g " | awk -F "|" '{print $3}')
