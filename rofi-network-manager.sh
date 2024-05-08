@@ -24,10 +24,30 @@ SIGNAL_STRENGTH_3="123"
 SIGNAL_STRENGTH_4="1234"
 VPN_PATTERN='(wireguard|vpn)'
 function initialization() {
-    source "$DIR/rofi-network-manager.conf" || source "${XDG_CONFIG_HOME:-$HOME/.config}/rofi/rofi-network-manager.conf"
-    { [[ -f "$DIR/rofi-network-manager.rasi" ]] && RASI_DIR="$DIR/rofi-network-manager.rasi"; } || { [[ -f "${XDG_CONFIG_HOME:-$HOME/.config}/rofi/rofi-network-manager.rasi" ]] && RASI_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/rofi/rofi-network-manager.rasi"; } || exit
-    for i in "${WIRELESS_INTERFACES[@]}"; do WIRELESS_INTERFACES_PRODUCT+=("$(nmcli -f general.product device show "$i" | awk '{print $2}')"); done
-    for i in "${WIRED_INTERFACES[@]}"; do WIRED_INTERFACES_PRODUCT+=("$(nmcli -f general.product device show "$i" | awk '{print $2}')"); done
+    source "${XDG_CONFIG_HOME:-$HOME/.config}/rofi-network-manager/conf.sh" ||
+        source "${XDG_CONFIG_HOME:-$HOME/.config}/rofi/rofi-network-manager.conf" ||
+        source "$DIR/rofi-network-manager.conf"
+
+    {
+        [[ -f "${XDG_CONFIG_HOME:-$HOME/.config}/rofi-network-manager/conf.rasi" ]] &&
+            RASI_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/rofi-network-manager/conf.rasi"
+    } || {
+
+        [[ -f "${XDG_CONFIG_HOME:-$HOME/.config}/rofi/rofi-network-manager.rasi" ]] &&
+            RASI_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/rofi/rofi-network-manager.rasi"
+    } || {
+        [[ -f "$DIR/rofi-network-manager.rasi" ]] &&
+            RASI_DIR="$DIR/rofi-network-manager.rasi"
+    } || exit
+
+    for i in "${WIRELESS_INTERFACES[@]}"; do
+        WIRELESS_INTERFACES_PRODUCT+=("$(nmcli -f general.product device show "$i" | awk '{print $2}')")
+    done
+
+    for i in "${WIRED_INTERFACES[@]}"; do
+        WIRED_INTERFACES_PRODUCT+=("$(nmcli -f general.product device show "$i" | awk '{print $2}')")
+    done
+
     wireless_interface_state && ethernet_interface_state
 }
 function notification() {
