@@ -23,8 +23,10 @@ SIGNAL_STRENGTH_2="12"
 SIGNAL_STRENGTH_3="123"
 SIGNAL_STRENGTH_4="1234"
 VPN_PATTERN='(wireguard|vpn)'
+
 function initialization() {
     source "$DIR/rofi-network-manager.conf" || source "${XDG_CONFIG_HOME:-$HOME/.config}/rofi/rofi-network-manager.conf"
+
     { [[ -f "$DIR/rofi-network-manager.rasi" ]] && RASI_DIR="$DIR/rofi-network-manager.rasi"; } || { [[ -f "${XDG_CONFIG_HOME:-$HOME/.config}/rofi/rofi-network-manager.rasi" ]] && RASI_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/rofi/rofi-network-manager.rasi"; } || exit
     for i in "${WIRELESS_INTERFACES[@]}"; do WIRELESS_INTERFACES_PRODUCT+=("$(nmcli -f general.product device show "$i" | awk '{print $2}')"); done
     for i in "${WIRED_INTERFACES[@]}"; do WIRED_INTERFACES_PRODUCT+=("$(nmcli -f general.product device show "$i" | awk '{print $2}')"); done
@@ -283,7 +285,7 @@ function selection_action() {
     "~More Options") more_options ;;
     "~Open Connection Editor") nm-connection-editor ;;
     "~VPN") vpn ;;
-    "SSID  "*) initialization && rofi_menu ;;
+    "SSID  "*) main ;;
     *)
         [[ -n "$SELECTION" ]] && [[ "$WIFI_LIST" =~ .*"$SELECTION".* ]] && {
             [[ "$SSID" == "*" ]] && SSID=$(echo "$SELECTION" | sed "s/\s\{2,\}/\|/g " | awk -F "|" '{print $3}')
