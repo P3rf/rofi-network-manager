@@ -1,10 +1,4 @@
-configuration {
-	show-icons:		false;
-	sidebar-mode: 	false;
-	hover-select: true;
-	me-select-entry: "";
-	me-accept-entry: [MousePrimary];
-}
+
 *{
 	font: "DejaVu Sans Mono 9";			//Font
 	//Colors
