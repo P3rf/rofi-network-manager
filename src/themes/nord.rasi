@@ -1,0 +1,76 @@
+/*
+ * Nord color theme
+ *
+ * Based on https://github.com/Murzchnvok/rofi-collection/blob/master/murz/murz.rasi
+ *
+*/
+
+* {
+	font: "JetBrainsMono Nerd Font Medium 10";
+	border: 0;
+	margin: 0;
+	padding: 0;
+	spacing: 0;
+
+	bg: #2E3440;
+	bg-alt: #3B4252;
+	fg: #81A1C1;
+	fg-alt: #EBCB8B;
+
+	background-color: @bg;
+	text-color: @fg;
+}
+
+window {
+	text-color:			inherit;
+	background-color:	inherit;
+	border-radius: 		6px;
+
+}
+mainbox {
+	border:		0;
+	padding: 	0;
+	children: [inputbar, listview];
+}
+
+listview {
+	spacing:		4px;
+	dynamic:		true;
+	fixed-height:	false;
+	border:			0;
+	scrollbar:		false;
+}
+
+inputbar {
+	background-color: @bg-alt;
+	children: [textbox-prompt-colon,entry];
+	padding: 4px;
+}
+
+entry {
+	placeholder:	"";
+	background-color: inherit;
+}
+
+prompt {
+	background-color: inherit;
+	
+}
+
+element {
+	children: [element-icon, element-text];
+}
+
+
+element-text {
+	padding: 2px 0;
+}
+
+element-text selected {
+	text-color: @fg-alt;
+}
+textbox-prompt-colon{
+	expand:	false;
+	margin: 0;
+	str:	":";
+}
