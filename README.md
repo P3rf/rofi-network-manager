@@ -1,8 +1,6 @@
 # Rofi-NetWork-manager
-
 A Network manager for Tiling Window Managers [i3/bspwm/awesome/etc] or not.
 Inspired from [rofi-wifi-menu](https://github.com/zbaylin/rofi-wifi-menu).
-
 ## Table of Contents
 
 - [Requirements](#requirements)
@@ -38,17 +36,20 @@ Inspired from [rofi-wifi-menu](https://github.com/zbaylin/rofi-wifi-menu).
 - Status
   - See devices Connection name and local IP.
 - See Current wifi password and share it with a qrcode.
-- Connect to pre-configure VPNs.
+- Connect to pre-configured VPNs.
 - Change the defualt signal strength bars with anything you want.
+- Language Support  based on conf file.
 
 ### Screenshots
 
-![Desktop](desktop.png)
-![Options](options.png)
+![Desktop](docs/images/main.png)
+![Options](docs/images/options.png)
 
 ### Config
 
-**rofi-network-manager.conf**
+<details> 
+ <summary>ronema.conf</summary>
+
 
 ```
 # Location
@@ -91,10 +92,19 @@ SIGNAL_STRENGTH_1="1"
 SIGNAL_STRENGTH_2="12"
 SIGNAL_STRENGTH_3="123"
 SIGNAL_STRENGTH_4="1234"
-
+#Selection prefix
+SELECTION_PREFIX="~"
+#Language
+LANGUAGE="english"
+#Default theme
+THEME="ronema.rasi"
 ```
+</details>
 
-**rofi-network-manager.rasi**
+### Themes
+
+<details> 
+ <summary>ronema.rasi</summary>
 
 ```
 font: "DejaVu Sans Mono 9";       //Font
@@ -105,18 +115,20 @@ accent:#00BCD4;                   //Highlight
 foreground-selection:@foreground; //Selection_fg
 background-selection:#e34039;     //Selection_bg
 ```
+</details>
 
 ### Download-Usage
 
 ```
 git clone https://github.com/P3rf/rofi-network-manager.git
-cd rofi-network-manager
-bash "./rofi-network-manager.sh"
+cd rofi-network-manager/src
+bash "./ronema"
 ```
 
 ### Examples-Usage
 
-**Polybar modules**
+<details> 
+ <summary>Polybar modules</summary>
 
 ```
 [module/wireless-network]
@@ -127,12 +139,12 @@ unknown-as-up = true
 format-connected-background = ${colors.background}
 format-connected-foreground = ${colors.foreground}
 format-connected-padding = 1
-format-connected = %{A1:$HOME/.../rofi-network-manager/rofi-network-manager.sh:}<ramp-signal> <label-connected>%{A}
+format-connected = %{A1:ronema:}<ramp-signal> <label-connected>%{A}
 label-connected = %essid%/%local_ip%
 format-disconnected-background = ${colors.background}
 format-disconnected-foreground = ${colors.foreground}
 format-disconnected-padding = 1
-format-disconnected = %{A1:$HOME/.../rofi-network-manager/rofi-network-manager.sh:}<label-disconnected>%{A}
+format-disconnected = %{A1:ronema:}<label-disconnected>%{A}
 label-disconnected =""
 ramp-signal-0 = "󰤯"
 ramp-signal-1 = "󰤟"
@@ -150,19 +162,20 @@ interval = 3.0
 format-connected-background = ${colors.background}
 format-connected-foreground = ${colors.foreground}
 format-connected-padding = 1
-format-connected = %{A1:$HOME/.../rofi-network-manager/rofi-network-manager.sh:}<label-connected>%{A}
+format-connected = %{A1:ronema:}<label-connected>%{A}
 label-connected =  %local_ip%
 format-disconnected-background = ${colors.background}
 format-disconnected-foreground = ${colors.foreground-alt}
 format-disconnected-padding = 1
-format-disconnected = %{A1:$HOME/.../rofi-network-manager/rofi-network-manager.sh:}<label-disconnected>%{A}
+format-disconnected = %{A1:ronema:}<label-disconnected>%{A}
 label-disconnected ="󰌺"
 ```
+</details>
 
 ### ToDo
 
 - [x] Fix notifications
-- [ ] ~~Add notifications icons~~
+- [x] Add notifications icons
 - [x] Support for multiple wifi devices
 - [ ] Add Hotspot support
 - [x] Share wifi password with qrcode inside rofi

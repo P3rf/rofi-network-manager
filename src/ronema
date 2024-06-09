@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ICON_DIR="$DIR/icons"
 WIRELESS_INTERFACES=($(nmcli device | awk '$2=="wifi" {print $1}'))
 WIRELESS_INTERFACES_PRODUCT=()
 WLAN_INT=0
@@ -15,7 +16,10 @@ function initialization() {
 	wireless_interface_state && ethernet_interface_state
 }
 function notification() {
-	[[ "$NOTIFICATIONS" == "true" && -x "$(command -v notify-send)" ]] && notify-send -r "5" -u "normal" $1 "$2"
+	[[ "$NOTIFICATIONS" == "true" && -x "$(command -v notify-send)" ]] && {
+		[[ $NOTIFICATIONS_ICONS == true ]] &&  ICON="-i $ICON_DIR/$3" || ICON=""
+		notify-send -r "5" -u "normal" $1 "$2" $ICON
+	}
 }
 function wireless_interface_state() {
 
@@ -62,11 +66,11 @@ function change_wireless_interface() {
 }
 function scan() {
 	[[ "$WIFI_CON_STATE" =~ "unavailable" ]] && change_wifi_state "${NOTIFICATION_WIFI_TILE}" "${NOTIFICATION_WIFI_ENABLE}" "on" && sleep 2
-	notification "-t 0 ${NOTIFICATION_WIFI_TILE}" "${NOTIFICATION_WIFI_SCANNING}"
+	notification "-t 0 ${NOTIFICATION_WIFI_TILE}" "${NOTIFICATION_WIFI_SCANNING}" "scanning.svg"
 	WIFI_LIST=$(nmcli --fields SSID,SECURITY,BARS device wifi list ifname "${WIRELESS_INTERFACES[WLAN_INT]}" --rescan yes)
 	wifi_list
 	wireless_interface_state && ethernet_interface_state
-	notification "-t 1 ${NOTIFICATION_WIFI_TILE}" "${NOTIFICATION_WIFI_SCANNING}"
+	notification "-t 1 ${NOTIFICATION_WIFI_TILE}" "${NOTIFICATION_WIFI_SCANNING}" "scanning.svg"
 	rofi_menu
 }
 function wifi_list() {
@@ -75,20 +79,20 @@ function wifi_list() {
 	[[ $CHANGE_BARS == "true" ]] && WIFI_LIST=$(echo -e "$WIFI_LIST" | sed 's/\(.*\)▂▄▆█/\1'$SIGNAL_STRENGTH_4'/' | sed 's/\(.*\)▂▄▆_/\1'$SIGNAL_STRENGTH_3'/' | sed 's/\(.*\)▂▄__/\1'$SIGNAL_STRENGTH_2'/' | sed 's/\(.*\)▂___/\1'$SIGNAL_STRENGTH_1'/' | sed 's/\(.*\)____/\1'$SIGNAL_STRENGTH_0'/')
 }
 function change_wifi_state() {
-	notification "$1" "$2"
+	notification "$1" "$2" "change.svg"
 	nmcli radio wifi "$3"
 }
 function change_wired_state() {
-	notification "$1" "$2"
+	notification "$1" "$2" "change.svg"
 	nmcli device "$3" "$4"
 }
 function net_restart() {
-	notification "$1" "$2"
+	notification "$1" "$2" "restart.svg"
 	nmcli networking off && sleep 3 && nmcli networking on
 }
 function disconnect() {
 	ACTIVE_SSID=$(nmcli -t -f GENERAL.CONNECTION dev show "${WIRELESS_INTERFACES[WLAN_INT]}" | cut -d ':' -f2)
-	notification "$1" "${NOTIFICATION_WIFI_DISCONNECTED} '$ACTIVE_SSID'"
+	notification "$1" "${NOTIFICATION_WIFI_DISCONNECTED} '$ACTIVE_SSID'" "wifi-disconnect.svg"
 	nmcli con down id "$ACTIVE_SSID"
 }
 function check_wifi_connected() {
@@ -96,8 +100,8 @@ function check_wifi_connected() {
 }
 function connect() {
 	check_wifi_connected
-	notification "-t 0 Wi-Fi" "${NOTIFICATION_WIFI_CONNECTING} $1"
-	{ [[ $(nmcli dev wifi con "$1" password "$2" ifname "${WIRELESS_INTERFACES[WLAN_INT]}" | grep -c "successfully activated") -eq "1" ]] && notification "${NOTIFICATION_WIFI_TILE_CONNECTION_OK}" "${NOTIFICATION_WIFI_CONNECTED} '$1'"; } || notification "${NOTIFICATION_WIFI_TILE_CONNECTION_ERROR}" "${NOTIFICATION_WIFI_ERROR}"
+	notification "-t 0 Wi-Fi" "${NOTIFICATION_WIFI_CONNECTING} $1" "wait.svg"
+	{ [[ $(nmcli dev wifi con "$1" password "$2" ifname "${WIRELESS_INTERFACES[WLAN_INT]}" | grep -c "successfully activated") -eq "1" ]] && notification "${NOTIFICATION_WIFI_TILE_CONNECTION_OK}" "${NOTIFICATION_WIFI_CONNECTED} '$1'" "wifi.svg"; } || notification "${NOTIFICATION_WIFI_TILE_CONNECTION_ERROR}" "${NOTIFICATION_WIFI_ERROR}" "alert.svg"
 }
 function enter_passwword() {
 	PROMPT="${PROMPT_PASSWORD}" && PASS=$(echo "$PASSWORD_ENTER" | rofi_cmd "$PASSWORD_ENTER" 4 "-password")
@@ -107,8 +111,8 @@ function enter_ssid() {
 }
 function stored_connection() {
 	check_wifi_connected
-	notification "-t 0 Wi-Fi" "${NOTIFICATION_WIFI_CONNECTING} $1"
-	{ [[ $(nmcli dev wifi con "$1" ifname "${WIRELESS_INTERFACES[WLAN_INT]}" | grep -c "successfully activated") -eq "1" ]] && notification "${NOTIFICATION_WIFI_TILE_CONNECTION_OK}" "${NOTIFICATION_WIFI_CONNECTED} '$1'"; } || notification "${NOTIFICATION_WIFI_TILE_CONNECTION_ERROR}" "${NOTIFICATION_WIFI_ERROR}"
+	notification "-t 0 Wi-Fi" "${NOTIFICATION_WIFI_CONNECTING} $1" "wait.svg"
+	{ [[ $(nmcli dev wifi con "$1" ifname "${WIRELESS_INTERFACES[WLAN_INT]}" | grep -c "successfully activated") -eq "1" ]] && notification "${NOTIFICATION_WIFI_TILE_CONNECTION_OK}" "${NOTIFICATION_WIFI_CONNECTED} '$1'" "wifi.svg"; } || notification "${NOTIFICATION_WIFI_TILE_CONNECTION_ERROR}" "${NOTIFICATION_WIFI_ERROR}" "alert.svg"
 }
 function ssid_manual() {
 	enter_ssid
@@ -126,8 +130,8 @@ function ssid_hidden() {
 			nmcli con modify "$SSID" wifi-sec.key-mgmt wpa-psk
 			nmcli con modify "$SSID" wifi-sec.psk "$PASS"
 		} || [[ $(nmcli -g NAME con show | grep -c "$SSID") -eq "0" ]] && nmcli con add type wifi con-name "$SSID" ssid "$SSID" ifname "${WIRELESS_INTERFACES[WLAN_INT]}"
-		notification "-t 0 ${NOTIFICATION_WIFI_TILE}" "${NOTIFICATION_WIFI_CONNECTING} $SSID"
-		{ [[ $(nmcli con up id "$SSID" | grep -c "successfully activated") -eq "1" ]] && notification "${NOTIFICATION_WIFI_TILE_CONNECTION_OK}" "${NOTIFICATION_WIFI_CONNECTED} '$SSID'"; } || notification "${NOTIFICATION_WIFI_TILE_CONNECTION_ERROR}" "${NOTIFICATION_WIFI_ERROR}"
+		notification "-t 0 ${NOTIFICATION_WIFI_TILE}" "${NOTIFICATION_WIFI_CONNECTING} $SSID" "wait.svg"
+		{ [[ $(nmcli con up id "$SSID" | grep -c "successfully activated") -eq "1" ]] && notification "${NOTIFICATION_WIFI_TILE_CONNECTION_OK}" "${NOTIFICATION_WIFI_CONNECTED} '$SSID'"; } || notification "${NOTIFICATION_WIFI_TILE_CONNECTION_ERROR}" "${NOTIFICATION_WIFI_ERROR}" "alert.svg"
 	}
 }
 function interface_status() {
@@ -170,10 +174,10 @@ function vpn() {
 	ACTIVE_VPN=$(nmcli -g NAME,TYPE con show --active | awk '/:'$VPN_PATTERN'/ {sub(/:'$VPN_PATTERN'.*/, ""); print}')
 	[[ $ACTIVE_VPN ]] && OPTIONS="${SELECTION_PREFIX}${SELECTION_DISCONECT} $ACTIVE_VPN" || OPTIONS="$(nmcli -g NAME,TYPE connection | awk '/:'$VPN_PATTERN'/ {sub(/:'$VPN_PATTERN'.*/, ""); print}')"
 	VPN_ACTION=$(echo -e "$OPTIONS" | rofi_cmd "$OPTIONS" "$WIDTH_FIX_STATUS" "" "mainbox {children:[listview];}")
-	[[ -n "$VPN_ACTION" ]] && { { [[ "$VPN_ACTION" =~ "${SELECTION_PREFIX}${SELECTION_DISCONECT}" ]] && nmcli connection down "$ACTIVE_VPN" && notification "${NOTIFICATION_VPN_TITLE_DEACTIVE}" "$ACTIVE_VPN"; } || {
-		notification "-t 0 ${NOTIFICATION_VPN_TITLE_ACTIVATING}" "$VPN_ACTION"
+	[[ -n "$VPN_ACTION" ]] && { { [[ "$VPN_ACTION" =~ "${SELECTION_PREFIX}${SELECTION_DISCONECT}" ]] && nmcli connection down "$ACTIVE_VPN" && notification "${NOTIFICATION_VPN_TITLE_DEACTIVE}" "$ACTIVE_VPN" "vpn.svg"; } || {
+		notification "-t 0 ${NOTIFICATION_VPN_TITLE_ACTIVATING}" "$VPN_ACTION" "vpn.svg"
 		VPN_OUTPUT=$(nmcli connection up "$VPN_ACTION" 2>/dev/null)
-		{ [[ $(echo "$VPN_OUTPUT" | grep -c "Connection successfully activated") -eq "1" ]] && notification "${NOTIFICATION_VPN_TITLE_OK}" "$VPN_ACTION"; } || notification "${NOTIFICATION_VPN_TITLE_ERROR}" "${NOTIFICATION_VPN_CHECK} $VPN_ACTION"
+		{ [[ $(echo "$VPN_OUTPUT" | grep -c "Connection successfully activated") -eq "1" ]] && notification "${NOTIFICATION_VPN_TITLE_OK}" "$VPN_ACTION" "vpn.svg"; } || notification "${NOTIFICATION_VPN_TITLE_ERROR}" "${NOTIFICATION_VPN_CHECK} $VPN_ACTION" "alert.svg"
 	}; }
 }
 function more_options() {
