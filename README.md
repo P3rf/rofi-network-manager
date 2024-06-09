@@ -1,4 +1,4 @@
-# Rofi-NetWork-manager
+# ronema - Rofi-Network-manager
 A Network manager for Tiling Window Managers [i3/bspwm/awesome/etc] or not.
 
 Inspired from [rofi-wifi-menu](https://github.com/zbaylin/rofi-wifi-menu).
@@ -11,6 +11,7 @@ Inspired from [rofi-wifi-menu](https://github.com/zbaylin/rofi-wifi-menu).
 - [Languages](#language-localization)
 - [Download-Usage](#download-usage)
 - [Instalationn](#installing-uninstalling-and-updating-ronema)
+- [Themes](#themes)
 - [Examples-Usage](#examples-usage)
 - [ToDo](#todo)
 
@@ -125,15 +126,16 @@ cd rofi-network-manager
 ./src/ronema
 ```
 
-### Installing, Uninstalling, and Updating Ronema
+### Installing, Uninstalling, and Updating ronema
 
-To install Ronema, run the following command:
+To install ronema, run the following command:
 
 ```bash
 ./setup.sh install
 ```
+> **Note:** This will only install ronema, not its dependencies. Please refer to the [Requirements](#requirements) section and ensure all dependencies are installed.
 
-To uninstall Ronema, you can use the following command:
+To uninstall ronema, you can use the following command:
 
 ```bash
 ./setup.sh uninstall [--remove_config]
@@ -141,7 +143,7 @@ To uninstall Ronema, you can use the following command:
 
 The `--remove_config` flag is optional. If provided, it will remove the configuration files along with the program.
 
-To update Ronema, run:
+To update ronema, run:
 
 ```bash
 ./setup.sh update [--override_conf]
@@ -150,6 +152,17 @@ To update Ronema, run:
 The `--override_conf` flag is optional. If provided, it will override the existing configuration file during the update process.
 
 Configuration files will be located at `~/.config/ronema`.
+
+### Themes
+
+Rofi themes for ronema are located in the `src/themes` directory, or if installed, in `~/.config/ronema/themes`. Available themes at the moment are:
+
+- `nord.rasi`
+- `ronema_grey.rasi`
+- `ronema.rasi`
+
+You can create your own Rofi theme for ronema and set it in the configuration file (`ronema.conf`) by changing the `THEME` option.
+
 
 ### Examples-Usage
 
