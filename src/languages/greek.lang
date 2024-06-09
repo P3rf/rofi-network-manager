@@ -36,8 +36,8 @@ NOTIFICATION_WIFI_DISCONNECTED="Έχετε αποσυνδεθεί από το δ
 NOTIFICATION_WIFI_ERROR="Η σύνδεση δεν μπορεί να επιτευχθεί"
 
 NOTIFICATION_WIRED_TITLE="Ethernet"
-NOTIFICATION_WIRED_ENABLE="Απενεργοποίηση ενσύρματης σύνδεσης"
-NOTIFICATION_WIRED_DISBALE="Ενεργοποίηση ενσύρματης σύνδεσης"
+NOTIFICATION_WIRED_ENABLE="Ενεργοποίηση ενσύρματης σύνδεσης"
+NOTIFICATION_WIRED_DISBALE="Απενεργοποίηση ενσύρματης σύνδεσης"
 
 NOTIFICATION_VPN_TITLE_OK="VPN_ενεργοποιήθηκε_επιτυχώς"
 NOTIFICATION_VPN_TITLE_ERROR="Σφάλμα_στην_ενεργοποίηση_VPN"

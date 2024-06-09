@@ -36,8 +36,8 @@ NOTIFICATION_WIFI_DISCONNECTED="You're now disconnected from Wi-Fi network"
 NOTIFICATION_WIFI_ERROR="Connection can not be established"
 
 NOTIFICATION_WIRED_TITLE="Ethernet"
-NOTIFICATION_WIRED_ENABLE="Disabling Wired connection"
-NOTIFICATION_WIRED_DISBALE="Enabling Wired connection"
+NOTIFICATION_WIRED_ENABLE="Enabling Wired connection"
+NOTIFICATION_WIRED_DISBALE="Disabling Wired connection"
 
 NOTIFICATION_VPN_TITLE_OK="VPN_Successfully_Activated"
 NOTIFICATION_VPN_TITLE_ERROR="Error_Activating_VPN"
