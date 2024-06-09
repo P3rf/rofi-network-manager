@@ -7,7 +7,9 @@ Inspired from [rofi-wifi-menu](https://github.com/zbaylin/rofi-wifi-menu).
 - [Features](#features)
 - [Screenshots](#screenshots)
 - [Config](#config)
+- [Languages](#language-localization)
 - [Download-Usage](#download-usage)
+- [Instalationn](#installing-uninstalling-and-updating-ronema)
 - [Examples-Usage](#examples-usage)
 - [ToDo](#todo)
 
@@ -38,7 +40,7 @@ Inspired from [rofi-wifi-menu](https://github.com/zbaylin/rofi-wifi-menu).
 - See Current wifi password and share it with a qrcode.
 - Connect to pre-configured VPNs.
 - Change the defualt signal strength bars with anything you want.
-- Language Support  based on conf file.
+- Support for language localization based on configuration file.
 
 ### Screenshots
 
@@ -70,6 +72,7 @@ X_AXIS=0
 #Use notifications or not
 #Values can be "true" or "false"
 NOTIFICATIONS="false"
+NOTIFICATIONS_ICONS="false"
 #Location of qrcode wifi image
 QRCODE_DIR="/tmp/"
 #WIDTH_FIX_MAIN/WIDTH_FIX_STATUS 
@@ -81,11 +84,11 @@ WIDTH_FIX_STATUS=10
 #Values can be "true" or "false"
 #Set it to true, if the script outputs the signal strength with asterisks
 #and you want  bars.
-ASCII_OUT=false
+ASCII_OUT="false"
 #Values can be "true" or "false"
 #Set it to true if you want to use custom icons
 #for the signal strength instead of the default ones.
-CHANGE_BARS=false
+CHANGE_BARS="false"
 #Custom signal strength indicators
 SIGNAL_STRENGTH_0="0"
 SIGNAL_STRENGTH_1="1"
@@ -101,29 +104,51 @@ THEME="ronema.rasi"
 ```
 </details>
 
-### Themes
+### Language Localization
 
-<details> 
- <summary>ronema.rasi</summary>
+To localize Rofi-NetWork-manager to your preferred language:
 
-```
-font: "DejaVu Sans Mono 9";       //Font
-//Colors
-foreground:#f8f8f2;               //Text
-background:#0A1229;               //Background
-accent:#00BCD4;                   //Highlight
-foreground-selection:@foreground; //Selection_fg
-background-selection:#e34039;     //Selection_bg
-```
-</details>
+1. **Create a New Language File**: Duplicate `lang_file.example` and rename it to match your language (e.g., `french.lang`).
+
+2. **Translate Strings**: Open the new language file (`french.lang`) and translate all strings to your language.
+
+3. **Save the File**: Save your translated language file in `/languages`.
+
+4. **Select the Language**: In `ronema.conf`, set `LANGUAGE` to your language file's name (without extension).
 
 ### Download-Usage
 
-```
+```bash
 git clone https://github.com/P3rf/rofi-network-manager.git
 cd rofi-network-manager/src
-bash "./ronema"
+./ronema
 ```
+
+### Installing, Uninstalling, and Updating Ronema
+
+To install Ronema, run the following command:
+
+```bash
+./setup.sh install
+```
+
+To uninstall Ronema, you can use the following command:
+
+```bash
+./setup.sh uninstall [--remove_config]
+```
+
+The `--remove_config` flag is optional. If provided, it will remove the configuration files along with the program.
+
+To update Ronema, run:
+
+```bash
+./setup.sh update [--override_conf]
+```
+
+The `--override_conf` flag is optional. If provided, it will override the existing configuration file during the update process.
+
+
 
 ### Examples-Usage
 
