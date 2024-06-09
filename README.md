@@ -1,5 +1,6 @@
 # Rofi-NetWork-manager
 A Network manager for Tiling Window Managers [i3/bspwm/awesome/etc] or not.
+
 Inspired from [rofi-wifi-menu](https://github.com/zbaylin/rofi-wifi-menu).
 ## Table of Contents
 
