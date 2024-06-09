@@ -120,9 +120,9 @@ To localize Rofi-NetWork-manager to your preferred language:
 ### Download-Usage
 
 ```bash
-git clone https://github.com/P3rf/rofi-network-manager.git
-cd rofi-network-manager/src
-./ronema
+git clone --depth 1 --branch master https://github.com/P3rf/rofi-network-manager.git
+cd rofi-network-manager
+./src/ronema
 ```
 
 ### Installing, Uninstalling, and Updating Ronema
@@ -149,7 +149,7 @@ To update Ronema, run:
 
 The `--override_conf` flag is optional. If provided, it will override the existing configuration file during the update process.
 
-
+Configuration files will be located at `~/.config/ronema`.
 
 ### Examples-Usage
 
