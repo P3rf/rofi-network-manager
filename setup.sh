@@ -4,7 +4,7 @@ INSTALL_DIR="/usr/local/bin"
 CONFIG_DIR="$HOME/.config/ronema"
 SRC_DIR="src"
 
-copy_files() {
+function copy_files() {
     local source_path=$1
     local destination_path=$2
     local item=$3
@@ -17,7 +17,7 @@ copy_files() {
     fi
 }
 
-copy_main_script() {
+function copy_main_script() {
     local source_path=$1
     local destination_path=$2
 
@@ -35,7 +35,7 @@ copy_main_script() {
     fi
 }
 
-install() {
+function install() {
     mkdir -p "$CONFIG_DIR"
 
     copy_main_script "$SRC_DIR" "$INSTALL_DIR"
@@ -49,7 +49,7 @@ install() {
     echo "You can execute 'ronema' to run the program."
 }
 
-uninstall() {
+function uninstall() {
     local remove_conf=false
 
     while getopts ":h-:" opt; do
@@ -90,7 +90,7 @@ uninstall() {
     fi
 }
 
-update() {
+function update() {
     local override_conf=false
     while getopts ":h-:" opt; do
         case $opt in
